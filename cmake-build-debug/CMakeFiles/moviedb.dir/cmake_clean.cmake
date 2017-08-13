@@ -1,7 +1,9 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/moviedb.dir/main.cpp.o"
+  "CMakeFiles/moviedb.dir/main.cpp.obj"
   "moviedb.pdb"
-  "moviedb"
+  "moviedb.exe"
+  "moviedb.exe.manifest"
+  "libmoviedb.dll.a"
 )
 
 # Per-language clean rules from dependency scanning.
