@@ -1,0 +1,1 @@
+/usr/bin/c++  -g   CMakeFiles/moviedb.dir/main.cpp.o  -o moviedb 
