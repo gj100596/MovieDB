@@ -1,3 +1,1 @@
-"F:\IDE\CLion 2017.2.1\bin\cmake\bin\cmake.exe" -E remove -f CMakeFiles\moviedb.dir/objects.a
-C:\MinGW\bin\ar.exe cr CMakeFiles\moviedb.dir/objects.a @CMakeFiles\moviedb.dir\objects1.rsp
-C:\MinGW\bin\g++.exe -g   -Wl,--whole-archive CMakeFiles\moviedb.dir/objects.a -Wl,--no-whole-archive  -o moviedb.exe -Wl,--out-implib,libmoviedb.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\moviedb.dir\linklibs.rsp
+/usr/bin/c++  -g   CMakeFiles/moviedb.dir/main.cpp.o  -o moviedb -lmysqlcppconn 

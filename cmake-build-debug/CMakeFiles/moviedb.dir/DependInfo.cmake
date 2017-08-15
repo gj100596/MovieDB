@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "F:/IDE/CLion 2017.2.1/Workspace/moviedb/main.cpp" "F:/IDE/CLion 2017.2.1/Workspace/moviedb/cmake-build-debug/CMakeFiles/moviedb.dir/main.cpp.obj"
+  "/home/gaurav/CLionProjects/moviedb/main.cpp" "/home/gaurav/CLionProjects/moviedb/cmake-build-debug/CMakeFiles/moviedb.dir/main.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 

@@ -3,5 +3,12 @@ project(moviedb)
 
 set(CMAKE_CXX_STANDARD 11)
 
+
 set(SOURCE_FILES main.cpp)
 add_executable(moviedb ${SOURCE_FILES})
+
+add_executable(server Server.cpp)
+add_executable(client Client.cpp)
+
+target_link_libraries(moviedb mysqlcppconn)
+target_link_libraries(server mysqlcppconn)
