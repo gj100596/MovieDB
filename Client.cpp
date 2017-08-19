@@ -9,6 +9,8 @@
 #include "stdlib.h"
 #include "sys/socket.h"
 
+#define PORTNO 8086
+
 using namespace std;
 
 int main(){
@@ -20,20 +22,29 @@ int main(){
     my_socket = socket(AF_INET,SOCK_STREAM,0);
 
     server_address.sin_family = AF_INET;
-    server_address.sin_port = htons(8081);
+    server_address.sin_port = htons(PORTNO);
     inet_aton( "127.0.0.1", &server_address.sin_addr);
 
     connect(my_socket,(sockaddr *) &server_address, sizeof(server_address));
-    cout<<"connected"<<endl;
+//    cout<<"connected"<<endl;
 
     char buff[1024];
-    string final;
     int n;
+    cout<< "ID\tMovie Title\n";
     while((n= recv(my_socket,buff,1024,0)) > 0) {
         cout << buff;
-        //cout << buff;
     }
-    cout << final;
+    cout <<"done";
+    int id;
+    cout<<"\n Enter Movie ID";
+    cin >> id;
+
+    char inp[128];
+    send(my_socket,inp, sizeof(inp),0);
+
+
+
+
     return 0;
 }
 

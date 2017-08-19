@@ -9,8 +9,9 @@
 #include <cstring>
 #include <sstream>
 #include "mysql_connection.h"
-
 #include "cppconn/statement.h"
+
+#define PORTNO 8086
 
 using namespace sql;
 
@@ -48,11 +49,20 @@ void send_movie_list(int client_socket){
             send(client_socket,buff,sizeof(buff),0);
             cout<< res->getInt(1) << "\t" << res->getString(2) <<endl;
         }
-
+        cout <<"OK";
         delete res;
         delete stmt;
         delete con;
     }
+}
+
+void communicate(int client_socket){
+    send_movie_list(client_socket);
+    cout <<"DataSent";
+    char no[128];
+    recv(client_socket,no, sizeof(no),0);
+    int n = atoi(no);
+    cout << n;
 }
 
 int main(){
@@ -65,7 +75,7 @@ int main(){
 
     my_address.sin_family = AF_INET;
     my_address.sin_addr.s_addr = INADDR_ANY;
-    my_address.sin_port = htons(8081);
+    my_address.sin_port = htons(PORTNO);
 
     bind(server_socket,(struct sockaddr *)&my_address, sizeof(my_address));
 
@@ -81,7 +91,7 @@ int main(){
         //char* h = "Hello";
         cout << client_socket <<endl;
         cout<< "Starting Giving Data"<<endl;
-        send_movie_list(client_socket);
+        communicate(client_socket);
 
     }
     return 0;
