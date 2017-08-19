@@ -8,6 +8,7 @@
 #include "arpa/inet.h"
 #include "stdlib.h"
 #include "sys/socket.h"
+#include "Classes.cpp"
 
 using namespace std;
 
@@ -26,11 +27,13 @@ int main(){
     connect(my_socket,(sockaddr *) &server_address, sizeof(server_address));
     cout<<"connected"<<endl;
 
-    char buff[1024];
+    void* buff[1024];
     string final;
     int n;
     while((n= recv(my_socket,buff,1024,0)) > 0) {
-        final.append(buff);
+        movie *obj;
+        obj = (movie *)&buff;
+        obj->print_table();
         //cout << buff;
     }
     cout << final;

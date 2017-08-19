@@ -10,6 +10,7 @@
 #include "mysql_connection.h"
 
 #include "cppconn/statement.h"
+#include "Classes.cpp"
 
 using namespace sql;
 
@@ -34,16 +35,21 @@ void send_movie_list(int client_socket){
         char *title = "ID \t Title\n";
         send(client_socket,title,sizeof(title),0);
         while(res->next()){
-            string entry;
-            entry.append(string(""+res->getInt(1)));
-            entry.append("\t");
-            entry.append(res->getString(2));
-            entry.append("\n");
 
-            char buff[1024];
-            strcpy(buff,entry.c_str());
-            send(client_socket,buff,sizeof(buff),0);
-            cout<< res->getInt(1) << "\t" << res->getString(2) <<endl;
+            movie obj(res->getInt(1),res->getString(2));
+            obj.print_table();
+            send(client_socket,&obj,sizeof(obj),0);
+
+//            string entry;
+//            entry.append(string(""+res->getInt(1)));
+//            entry.append("\t");
+//            entry.append(res->getString(2));
+//            entry.append("\n");
+//
+//            char buff[1024];
+//            strcpy(buff,entry.c_str());
+//            send(client_socket,buff,sizeof(buff),0);
+//            cout<< res->getInt(1) << "\t" << res->getString(2) <<endl;
         }
 
         delete res;

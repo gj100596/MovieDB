@@ -117,6 +117,10 @@ public:
         return !(rhs == *this);
     }
 
+    void print_table(){
+        cout<<id<<"\t"<<title<<endl;
+    }
+
     friend ostream &operator<<(ostream &os, const movie &movie1) {
         os << "id: " << movie1.id << " vote_count: " << movie1.vote_count << " genre_ids: " << movie1.genre_ids
            << " title: " << movie1.title << " poster_path: " << movie1.poster_path << " overview: " << movie1.overview
