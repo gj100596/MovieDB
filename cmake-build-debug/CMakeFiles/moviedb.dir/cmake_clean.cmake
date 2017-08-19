@@ -1,5 +1,6 @@
 file(REMOVE_RECURSE
   "CMakeFiles/moviedb.dir/main.cpp.o"
+  "CMakeFiles/moviedb.dir/Classes.cpp.o"
   "moviedb.pdb"
   "moviedb"
 )

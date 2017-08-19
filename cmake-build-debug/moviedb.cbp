@@ -176,6 +176,9 @@
 				</MakeCommands>
 			</Target>
 		</Build>
+		<Unit filename="/home/gaurav/CLionProjects/moviedb/Classes.cpp">
+			<Option target="moviedb"/>
+		</Unit>
 		<Unit filename="/home/gaurav/CLionProjects/moviedb/Client.cpp">
 			<Option target="client"/>
 		</Unit>

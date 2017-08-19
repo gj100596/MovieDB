@@ -1,1 +1,1 @@
-/usr/bin/c++  -g   CMakeFiles/moviedb.dir/main.cpp.o  -o moviedb -lmysqlcppconn 
+/usr/bin/c++  -g   CMakeFiles/moviedb.dir/main.cpp.o CMakeFiles/moviedb.dir/Classes.cpp.o  -o moviedb -lmysqlcppconn 

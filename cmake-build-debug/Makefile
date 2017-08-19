@@ -149,6 +149,33 @@ moviedb/fast:
 	$(MAKE) -f CMakeFiles/moviedb.dir/build.make CMakeFiles/moviedb.dir/build
 .PHONY : moviedb/fast
 
+Classes.o: Classes.cpp.o
+
+.PHONY : Classes.o
+
+# target to build an object file
+Classes.cpp.o:
+	$(MAKE) -f CMakeFiles/moviedb.dir/build.make CMakeFiles/moviedb.dir/Classes.cpp.o
+.PHONY : Classes.cpp.o
+
+Classes.i: Classes.cpp.i
+
+.PHONY : Classes.i
+
+# target to preprocess a source file
+Classes.cpp.i:
+	$(MAKE) -f CMakeFiles/moviedb.dir/build.make CMakeFiles/moviedb.dir/Classes.cpp.i
+.PHONY : Classes.cpp.i
+
+Classes.s: Classes.cpp.s
+
+.PHONY : Classes.s
+
+# target to generate assembly for a file
+Classes.cpp.s:
+	$(MAKE) -f CMakeFiles/moviedb.dir/build.make CMakeFiles/moviedb.dir/Classes.cpp.s
+.PHONY : Classes.cpp.s
+
 Client.o: Client.cpp.o
 
 .PHONY : Client.o
@@ -241,6 +268,9 @@ help:
 	@echo "... server"
 	@echo "... rebuild_cache"
 	@echo "... moviedb"
+	@echo "... Classes.o"
+	@echo "... Classes.i"
+	@echo "... Classes.s"
 	@echo "... Client.o"
 	@echo "... Client.i"
 	@echo "... Client.s"
