@@ -7,6 +7,7 @@
 #include "sys/socket.h"
 #include <mysql_driver.h>
 #include <cstring>
+#include <sstream>
 #include "mysql_connection.h"
 
 #include "cppconn/statement.h"
@@ -32,25 +33,34 @@ void send_movie_list(int client_socket){
 
         res = stmt->executeQuery("Select id,title from movie");
 
-        char *title = "ID \t Title\n";
-        send(client_socket,title,sizeof(title),0);
+//        send(client_socket,&title,sizeof(title),0);
+
+        string buffer = "ID \t Title\n";
         while(res->next()){
-
-            movie obj(res->getInt(1),res->getString(2));
-            obj.print_table();
-            send(client_socket,&obj,sizeof(obj),0);
-
-//            string entry;
-//            entry.append(string(""+res->getInt(1)));
-//            entry.append("\t");
-//            entry.append(res->getString(2));
-//            entry.append("\n");
+            ostringstream oss;
+            oss<<res->getInt(1);
 //
-//            char buff[1024];
-//            strcpy(buff,entry.c_str());
-//            send(client_socket,buff,sizeof(buff),0);
-//            cout<< res->getInt(1) << "\t" << res->getString(2) <<endl;
+//            movie obj(res->getInt(1),res->getString(2));
+//            obj.print_table();
+//            send(client_socket,&obj,sizeof(obj),0);
+
+            string entry;
+            entry.append(oss.str());
+//            entry.append(std::to_string(res->getInt(1)));
+            entry.append("\t");
+            entry.append(res->getString(2));
+            entry.append("\n");
+
+            int a = send(client_socket,&entry,sizeof(entry),0);
+            cout<<entry<<"................."<<a;
         }
+
+//        char buff[1024];
+//        strcpy(buff,buffer.c_str());
+//        send(client_socket,buff,sizeof(buff),0);
+//        cout<<"Sending...\n"<<buff;
+//        cout<<sizeof(buff);
+//        cout<< res->getInt(1) << "\t" << res->getString(2) <<endl;
 
         delete res;
         delete stmt;
