@@ -32,18 +32,27 @@ int main(){
     int n;
     cout<< "ID\tMovie Title\n";
     while((n= recv(my_socket,buff,1024,0)) > 0) {
+        string s = buff;
+        if(s.compare("-1")==0){
+            break;
+        }
         cout << buff;
     }
-    cout <<"done";
-    int id;
-    cout<<"\n Enter Movie ID";
-    cin >> id;
 
+    cout<<"\nEnter Movie ID: \n";
     char inp[128];
+    cin >> inp;
     send(my_socket,inp, sizeof(inp),0);
 
 
-
+    cout<< "\n Movie Details: \n";
+    while((n= recv(my_socket,buff,1024,0)) > 0) {
+        string s = buff;
+        if(s.compare("-1")==0){
+            break;
+        }
+        cout << buff;
+    }
 
     return 0;
 }

@@ -48,8 +48,78 @@ void send_movie_list(int client_socket){
             strcpy(buff,entry.c_str());
             send(client_socket,buff,sizeof(buff),0);
             cout<< res->getInt(1) << "\t" << res->getString(2) <<endl;
+
         }
-        cout <<"OK";
+
+        char end[1024] = "-1";
+        send(client_socket,end,1024,0);
+
+        delete res;
+        delete stmt;
+        delete con;
+    }
+}
+
+void send_movie_details(int client_socket, int id){
+    sql::Driver *driver;
+    sql::Connection *con;
+    sql::Statement *stmt;
+    sql::ResultSet *res;
+
+    driver = get_driver_instance();
+    con = driver->connect("tcp://127.0.0.1:3306", "root", "0882");
+
+    if(con->isValid()) {
+        ostringstream oss;
+
+        stmt = con->createStatement();
+        stmt->execute("USE moviedb");
+
+        string query = "select id,title,release_date,overview,vote_average,popularity,"
+                "genre_ids from movie where id =";
+        oss<<id;
+        query.append(oss.str());
+
+        res = stmt->executeQuery(query);
+
+        string col[] = {"Id","Title","Release Date","Overview","Vote_average","Popularity",
+                        "Genre Id"};
+
+        while(res->next()){
+
+            string row;
+            for(int i=0;i<7;i++){
+                if (i==0 || i==6){
+                    oss << res->getInt(i+1);
+                    row.append(col[i]);
+                    row.append("\t");
+                    row.append(oss.str());
+                    row.append("\n");
+                }
+                else if (i==4 || i==5){
+                    oss << res->getDouble(i+1);
+                    row.append(col[i]);
+                    row.append("\t");
+                    row.append(oss.str());
+                    row.append("\n");
+                }
+                else{
+                    row.append(col[i]);
+                    row.append("\t");
+                    row.append(res->getString(i+1).c_str());
+                    row.append("\n");
+                }
+            }
+
+            char buff[1024];
+            strcpy(buff,row.c_str());
+            send(client_socket,buff,sizeof(buff),0);
+            cout<< buff <<endl;
+        }
+
+        char end[1024] = "-1";
+        send(client_socket,end,1024,0);
+
         delete res;
         delete stmt;
         delete con;
@@ -58,11 +128,11 @@ void send_movie_list(int client_socket){
 
 void communicate(int client_socket){
     send_movie_list(client_socket);
-    cout <<"DataSent";
     char no[128];
     recv(client_socket,no, sizeof(no),0);
     int n = atoi(no);
-    cout << n;
+    send_movie_details(client_socket,n);
+    cout << n <<"..............."<<no;
 }
 
 int main(){
