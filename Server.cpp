@@ -1,6 +1,19 @@
+/*
+You don't need threads, you need asynchronous or "event-driven" programming.
+This can be done with select() if you want cross-platform,
+or epoll() if you're on Linux and want to support thousands of clients at once.
+
+But you don't need to implement this all from scratch--you can use Boost ASIO
+(some of which may become part of C++17) or a C library like libevent or libev or libuv.
+Those will handle a bunch of subtle details for you, and help you get more quickly to
+the real business of your application.
+*/
 //
 // Created by gaurav on 15/8/17.
 //
+
+#include <cstdlib>
+#include <pthread.h>
 
 #include <netinet/in.h>
 #include "iostream"
@@ -126,13 +139,14 @@ void send_movie_details(int client_socket, int id){
     }
 }
 
-void communicate(int client_socket){
+void *communicate(void * temp_client_socket){
+    int client_socket = *((int *)temp_client_socket);
     send_movie_list(client_socket);
     char no[128];
     recv(client_socket,no, sizeof(no),0);
     int n = atoi(no);
     send_movie_details(client_socket,n);
-    cout << n <<"..............."<<no;
+    cout << n <<"..............."<<no<<endl;
 }
 
 int main(){
@@ -161,7 +175,9 @@ int main(){
         //char* h = "Hello";
         cout << client_socket <<endl;
         cout<< "Starting Giving Data"<<endl;
-        communicate(client_socket);
+        pthread_t thread;
+        pthread_create(&thread,NULL,communicate,(void *)&client_socket);
+//        communicate(client_socket);
 
     }
     return 0;
@@ -271,3 +287,5 @@ int main(){
 //    }
 //    return 0;
 //}
+
+

@@ -10,5 +10,5 @@ add_executable(moviedb ${SOURCE_FILES})
 add_executable(server Server.cpp)
 add_executable(client Client.cpp)
 
-target_link_libraries(moviedb mysqlcppconn)
-target_link_libraries(server mysqlcppconn)
+target_link_libraries(moviedb mysqlcppconn pthread)
+target_link_libraries(server mysqlcppconn pthread)
