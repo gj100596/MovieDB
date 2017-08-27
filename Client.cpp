@@ -4,14 +4,74 @@
 
 #include <netinet/in.h>
 #include <unistd.h>
+#include <fstream>
 #include "iostream"
 #include "arpa/inet.h"
 #include "stdlib.h"
 #include "sys/socket.h"
 
-#define PORTNO 8086
+#define PORTNO 8081
+
+void get_user_choice(int server_socket);
 
 using namespace std;
+
+void get_movie_titles(int server_socket){
+    char buff[1024];
+    int n;
+    cout<< "ID\tMovie Title\n";
+    while((n= recv(server_socket,buff,1024,0)) > 0) {
+        string s = buff;
+        if(s.compare("-1")==0){
+            break;
+        }
+        cout << buff;
+    }
+}
+
+void get_user_choice(int server_socket) {
+    cout<<"\nEnter Movie ID: \n";
+    char inp[128];
+    cin >> inp;
+    send(server_socket,inp, sizeof(inp),0);
+
+}
+
+void get_movie_detail(int server_socket){
+    cout<< "\n Movie Details: \n";
+    char buff[1024];
+    int n;
+
+    while((n= recv(server_socket,buff,1024,0)) > 0) {
+        string s = buff;
+        if(s.compare("-1")==0){
+            break;
+        }
+        cout << buff;
+    }
+}
+
+void get_movie_poster(int server_socket){
+    cout<< "\nDownloading Poster: \n";
+    char buff[1024];
+    int n;
+    string path = "received/poster.jpg";
+    fstream poster;
+    poster.open(path,ios::out|ios::binary);
+
+    while((n= recv(server_socket,buff,1024,0)) > 0) {
+        string s = buff;
+        if(s.compare("-1")==0){
+            break;
+        }
+
+        poster.write(buff, sizeof(buff));
+    }
+
+    poster.close();
+    cout << "\nPoster Downloaded. Press 1 to See! 0 to Exit";
+}
+
 
 int main(){
 
@@ -28,34 +88,38 @@ int main(){
     connect(my_socket,(sockaddr *) &server_address, sizeof(server_address));
 //    cout<<"connected"<<endl;
 
-    char buff[1024];
-    int n;
-    cout<< "ID\tMovie Title\n";
-    while((n= recv(my_socket,buff,1024,0)) > 0) {
-        string s = buff;
-        if(s.compare("-1")==0){
-            break;
-        }
-        cout << buff;
-    }
+    get_movie_titles(my_socket);
+//    char buff[1024];
+//    int n;
+//    cout<< "ID\tMovie Title\n";
+//    while((n= recv(my_socket,buff,1024,0)) > 0) {
+//        string s = buff;
+//        if(s.compare("-1")==0){
+//            break;
+//        }
+//        cout << buff;
+//    }
 
-    cout<<"\nEnter Movie ID: \n";
-    char inp[128];
-    cin >> inp;
-    send(my_socket,inp, sizeof(inp),0);
+    get_user_choice(my_socket);
+//    cout<<"\nEnter Movie ID: \n";
+//    char inp[128];
+//    cin >> inp;
+//    send(my_socket,inp, sizeof(inp),0);
 
-
-    cout<< "\n Movie Details: \n";
-    while((n= recv(my_socket,buff,1024,0)) > 0) {
-        string s = buff;
-        if(s.compare("-1")==0){
-            break;
-        }
-        cout << buff;
-    }
+    get_movie_detail(my_socket);
+//    cout<< "\n Movie Details: \n";
+//    while((n= recv(my_socket,buff,1024,0)) > 0) {
+//        string s = buff;
+//        if(s.compare("-1")==0){
+//            break;
+//        }
+//        cout << buff;
+//    }
+    get_movie_poster(my_socket);
 
     return 0;
 }
+
 
 
 
