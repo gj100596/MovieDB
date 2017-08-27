@@ -25,11 +25,11 @@ the real business of your application.
 #include "mysql_connection.h"
 #include "cppconn/statement.h"
 
-#define PORTNO 8086
+#define PORTNO 8081
 
 using namespace sql;
-
 using namespace std;
+
 
 void send_movie_list(int client_socket){
     sql::Driver *driver;
@@ -144,29 +144,11 @@ void send_movie_poster(int client_socket,int movie_id) {
 
     ostringstream os;
     os<<movie_id;
-    string path = "images/"+os.str()+".jpg";
-    ifstream poster(path,ios::binary);
-//    poster.open(path,ios::in|ios::binary);
 
+    string path = "../images/"+os.str()+".jpg";
+    ifstream poster(path,ios::binary);
 
     char buffer[1024];
-
-
-//    poster.seekg (0, poster.end);
-//    int remaining_count = poster.tellg();
-//    poster.seekg (0, poster.beg);
-//
-//    while (remaining_count > 0){
-//        if(remaining_count < 1024){
-//            poster.read(buffer,remaining_count);
-//        }
-//        else{
-//            poster.read(buffer,1024);
-//            remaining_count-=1024;
-//        }
-//        send(client_socket,buffer,sizeof(buffer),0);
-//    }
-
 
     while(poster.read(buffer,1024) || poster.gcount() != 0  )
         send(client_socket,buffer,sizeof(buffer),0);

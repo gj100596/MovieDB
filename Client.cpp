@@ -52,10 +52,11 @@ void get_movie_detail(int server_socket){
 }
 
 void get_movie_poster(int server_socket){
+
     cout<< "\nDownloading Poster: \n";
     char buff[1024];
     int n;
-    string path = "received/poster.jpg";
+    string path = "../received/poster.jpg";
     fstream poster;
     poster.open(path,ios::out|ios::binary);
 
@@ -71,7 +72,6 @@ void get_movie_poster(int server_socket){
     poster.close();
     cout << "\nPoster Downloaded. Press 1 to See! 0 to Exit";
 }
-
 
 int main(){
 
