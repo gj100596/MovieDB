@@ -1,6 +1,19 @@
+/*
+You don't need threads, you need asynchronous or "event-driven" programming.
+This can be done with select() if you want cross-platform,
+or epoll() if you're on Linux and want to support thousands of clients at once.
+
+But you don't need to implement this all from scratch--you can use Boost ASIO
+(some of which may become part of C++17) or a C library like libevent or libev or libuv.
+Those will handle a bunch of subtle details for you, and help you get more quickly to
+the real business of your application.
+*/
 //
 // Created by gaurav on 15/8/17.
 //
+
+#include <cstdlib>
+#include <pthread.h>
 
 #include <netinet/in.h>
 #include "iostream"
@@ -12,7 +25,7 @@
 #include "mysql_connection.h"
 #include "cppconn/statement.h"
 
-#define PORTNO 8081
+#define PORTNO 8086
 
 using namespace sql;
 
@@ -174,8 +187,19 @@ void communicate(int client_socket){
 //    cout << n <<"..............."<<no;
     send_movie_poster(client_socket,movie_id);
 }
-
-
+void *communicate(void * temp_client_socket){
+    int client_socket = *((int *)temp_client_socket);
+    send_movie_list(client_socket);
+    char no[128];
+    recv(client_socket,no, sizeof(no),0);
+    int n = atoi(no);
+    send_movie_details(client_socket,n);
+    cout << n <<"..............."<<no<<endl;
+    int movie_id = atoi(no);
+    send_movie_details(client_socket,movie_id);
+//    cout << n <<"..............."<<no;
+    send_movie_poster(client_socket,movie_id);
+}
 
 int main(){
 
@@ -203,7 +227,9 @@ int main(){
         //char* h = "Hello";
         cout << client_socket <<endl;
         cout<< "Starting Giving Data"<<endl;
-        communicate(client_socket);
+        pthread_t thread;
+        pthread_create(&thread,NULL,communicate,(void *)&client_socket);
+//        communicate(client_socket);
 
     }
     return 0;
