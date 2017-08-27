@@ -178,23 +178,11 @@ void send_movie_poster(int client_socket,int movie_id) {
 
 }
 
-void communicate(int client_socket){
-    send_movie_list(client_socket);
-    char no[128];
-    recv(client_socket,no, sizeof(no),0);
-    int movie_id = atoi(no);
-    send_movie_details(client_socket,movie_id);
-//    cout << n <<"..............."<<no;
-    send_movie_poster(client_socket,movie_id);
-}
 void *communicate(void * temp_client_socket){
     int client_socket = *((int *)temp_client_socket);
     send_movie_list(client_socket);
     char no[128];
     recv(client_socket,no, sizeof(no),0);
-    int n = atoi(no);
-    send_movie_details(client_socket,n);
-    cout << n <<"..............."<<no<<endl;
     int movie_id = atoi(no);
     send_movie_details(client_socket,movie_id);
 //    cout << n <<"..............."<<no;
