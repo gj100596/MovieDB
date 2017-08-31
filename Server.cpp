@@ -25,7 +25,7 @@ the real business of your application.
 #include "mysql_connection.h"
 #include "cppconn/statement.h"
 
-#define PORTNO 8085
+#define PORTNO 8090
 #define BY_POPULARITY 1
 #define BY_DATE 2
 #define BY_NAME 3
@@ -250,7 +250,7 @@ void send_movie_poster(int client_socket, int movie_id) {
 void update_movie_rating(int rating,int id){
     sql::Connection *con;
     sql::Statement *stmt;
-    sql::ResultSet *res,*update;
+    sql::ResultSet *res;
 
     con = driver->connect("tcp://127.0.0.1:3306", "root", "0882");
 
@@ -281,15 +281,14 @@ void update_movie_rating(int rating,int id){
             ostringstream count_oss, rating_oss;
             count_oss << count;
             rating_oss << new_rating;
-            string update_query = "update table movie set vote_count "
+            string update_query = "update movie set vote_count "
                                           "= " + count_oss.str() + ",vote_average=" + rating_oss.str() + " "
                                           "where id = " + oss.str();
 
-            update = stmt->executeQuery(update_query);
+            int update = stmt->executeUpdate(update_query);
         }
     }
     delete res;
-    delete update;
     delete stmt;
     delete con;
 }

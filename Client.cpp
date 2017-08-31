@@ -17,7 +17,7 @@
 #define SEARCH_BY_NAME 3
 #define UPLOAD_MOVIE_DETAILS 4
 #define RATE_MOVIE 5
-#define PORTNO 8085
+#define PORTNO 8090
 using namespace cv;
 using namespace std;
 
@@ -105,7 +105,7 @@ void ask_for_movie_id(int my_socket) {
     send_str_to_socket(my_socket, oss.str());
 }
 
-int ask_for_rating(){
+int get_and_check_rating(){
     float rating;
     cout<<"Rate on the scale of 1 to 10: ";
     cin>>rating;
@@ -128,10 +128,10 @@ void ask_for_movie_rating(int my_socket){
         oss<<RATE_MOVIE;
         send_str_to_socket(my_socket,oss.str());
         int rating;
-        rating = ask_for_rating();
-        oss.clear();
-        oss<<rating;
-        send_str_to_socket(my_socket,oss.str());
+        rating = get_and_check_rating();
+        ostringstream oss1;
+        oss1<<rating;
+        send_str_to_socket(my_socket,oss1.str());
         cout<<"Thank you for rating the movie!"<<endl;
     }else{
         send_str_to_socket(my_socket,"-1");
