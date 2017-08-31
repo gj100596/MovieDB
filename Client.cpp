@@ -65,7 +65,12 @@ void get_movie_poster(int my_socket) {
     }
     poster.close();
     cout << "\nPoster Downloaded.\n";
-    open_image(path);//Absolute Path
+    cout << "Do you want to see poster? (y|N):\n";
+    char op;
+    cin >> op;
+    if (op == 'y') {
+        open_image(path);//Absolute Path
+    }
 }
 
 void receive_movie_detail(int my_socket) {
