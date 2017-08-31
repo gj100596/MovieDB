@@ -252,7 +252,7 @@ void send_movie_poster(int client_socket, int movie_id) {
 
 void *communicate(void *temp_client_socket) {
     int client_socket = *((int *) temp_client_socket);
-    char type_c[128];
+    char type_c[1024];
     recv(client_socket, type_c, sizeof(type_c), 0);
     int request_type = atoi(type_c);
 
@@ -263,7 +263,7 @@ void *communicate(void *temp_client_socket) {
     else {
         // If we want list go to send_movie_list() it give give right list
         if (request_type == BY_POPULARITY || request_type == BY_DATE) {
-            send_movie_list(client_socket, request_type, NULL);
+            send_movie_list(client_socket, request_type, "");
         }
             // If we are searching by name then we have to get movie detail by name
         else if (request_type == BY_NAME) {
@@ -276,8 +276,11 @@ void *communicate(void *temp_client_socket) {
         } else {
             cout << "Wrong Choice";
         }
-        char no[128];
+
+        char no[1024];
+
         recv(client_socket, no, sizeof(no), 0);
+        cout << no;
         int movie_id = atoi(no);
         send_movie_details(client_socket, movie_id);
         send_movie_poster(client_socket, movie_id);
