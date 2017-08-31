@@ -25,13 +25,19 @@ the real business of your application.
 #include "mysql_connection.h"
 #include "cppconn/statement.h"
 
-#define PORTNO 8081
+#define PORTNO 8085
+#define BY_POPULARITY 1
+#define BY_DATE 2
+#define BY_NAME 3
+#define UPLOAD 4
+#define RATE_MOVIE 5
 
 using namespace sql;
 using namespace std;
 
 
-void send_movie_list(int client_socket){
+sql::ResultSet* get_right_movie_list(int type,string movie_name) {
+
     sql::Driver *driver;
     sql::Connection *con;
     sql::Statement *stmt;
@@ -40,41 +46,62 @@ void send_movie_list(int client_socket){
     driver = get_driver_instance();
     con = driver->connect("tcp://127.0.0.1:3306", "root", "0882");
 
-    if(con->isValid()) {
+    if (con->isValid()) {
 
         stmt = con->createStatement();
         stmt->execute("USE moviedb");
 
-        res = stmt->executeQuery("Select id,title from movie");
-
-//        char *title = "ID \t Title\n";
-//        send(client_socket,title,sizeof(title),0);
-        while(res->next()){
-            ostringstream oss;
-            oss << res->getInt(1);
-            string entry;
-            entry.append(oss.str());
-            entry.append("\t");
-            entry.append(res->getString(2));
-            entry.append("\n");
-
-            char buff[1024];
-            strcpy(buff,entry.c_str());
-            send(client_socket,buff,sizeof(buff),0);
-            cout<< res->getInt(1) << "\t" << res->getString(2) <<endl;
-
+        if (type == BY_POPULARITY) {
+            res = stmt->executeQuery("Select id,title from movie");
+        } else if (type == BY_DATE){
+            res = stmt->executeQuery("Select id,title from movie order by release_date desc");
+        }
+        else if(type == BY_NAME){
+            string query = "select id,title from movie where title like \"%" + movie_name + "%\"";
+            res = stmt->executeQuery(query);
+        }
+        else{
+            return  NULL;
         }
 
-        char end[1024] = "-1";
-        send(client_socket,end,1024,0);
-
-        delete res;
-        delete stmt;
+        return res;
+    } else {
+        delete  res;
         delete con;
+        delete stmt;
+
+        return NULL;
     }
 }
 
-void send_movie_details(int client_socket, int id){
+void send_movie_list(int client_socket, int type,string movie_name) {
+    sql::ResultSet *res;
+
+    res = get_right_movie_list(type,movie_name);
+
+    while (res->next()) {
+        ostringstream oss;
+        oss << res->getInt(1);
+        string entry;
+        entry.append(oss.str());
+        entry.append("\t");
+        entry.append(res->getString(2));
+        entry.append("\n");
+
+        char buff[1024];
+        strcpy(buff, entry.c_str());
+        send(client_socket, buff, sizeof(buff), 0);
+        cout << res->getInt(1) << "\t" << res->getString(2) << endl;
+
+    }
+
+    char end[1024] = "-1";
+    send(client_socket, end, 1024, 0);
+
+    delete res;
+}
+
+void send_movie_details(int client_socket,int id) {
     sql::Driver *driver;
     sql::Connection *con;
     sql::Statement *stmt;
@@ -83,7 +110,7 @@ void send_movie_details(int client_socket, int id){
     driver = get_driver_instance();
     con = driver->connect("tcp://127.0.0.1:3306", "root", "0882");
 
-    if(con->isValid()) {
+    if (con->isValid()) {
         ostringstream oss;
 
         stmt = con->createStatement();
@@ -91,48 +118,46 @@ void send_movie_details(int client_socket, int id){
 
         string query = "select id,title,release_date,overview,vote_average,popularity,"
                 "genre_ids from movie where id =";
-        oss<<id;
+        oss << id;
         query.append(oss.str());
 
         res = stmt->executeQuery(query);
 
-        string col[] = {"Id","Title","Release Date","Overview","Vote_average","Popularity",
+        string col[] = {"Id", "Title", "Release Date", "Overview", "Vote_average", "Popularity",
                         "Genre Id"};
 
-        while(res->next()){
+        while (res->next()) {
 
             string row;
-            for(int i=0;i<7;i++){
-                if (i==0 || i==6){
-                    oss << res->getInt(i+1);
+            for (int i = 0; i < 7; i++) {
+                if (i == 0 || i == 6) {
+                    oss << res->getInt(i + 1);
                     row.append(col[i]);
                     row.append("\t");
                     row.append(oss.str());
                     row.append("\n");
-                }
-                else if (i==4 || i==5){
-                    oss << res->getDouble(i+1);
+                } else if (i == 4 || i == 5) {
+                    oss << res->getDouble(i + 1);
                     row.append(col[i]);
                     row.append("\t");
                     row.append(oss.str());
                     row.append("\n");
-                }
-                else{
+                } else {
                     row.append(col[i]);
                     row.append("\t");
-                    row.append(res->getString(i+1).c_str());
+                    row.append(res->getString(i + 1).c_str());
                     row.append("\n");
                 }
             }
 
             char buff[1024];
-            strcpy(buff,row.c_str());
-            send(client_socket,buff,sizeof(buff),0);
-            cout<< buff <<endl;
+            strcpy(buff, row.c_str());
+            send(client_socket, buff, sizeof(buff), 0);
+            cout << buff << endl;
         }
 
         char end[1024] = "-1";
-        send(client_socket,end,1024,0);
+        send(client_socket, end, 1024, 0);
 
         delete res;
         delete stmt;
@@ -140,172 +165,155 @@ void send_movie_details(int client_socket, int id){
     }
 }
 
-void send_movie_poster(int client_socket,int movie_id) {
+/*
+void send_movie_details(int client_socket,string movie_name) {
+    sql::Driver *driver;
+    sql::Connection *con;
+    sql::Statement *stmt;
+    sql::ResultSet *res;
+
+    driver = get_driver_instance();
+    con = driver->connect("tcp://127.0.0.1:3306", "root", "0882");
+
+    if (con->isValid()) {
+        ostringstream oss;
+
+        stmt = con->createStatement();
+        stmt->execute("USE moviedb");
+
+        string query = "select id,title,release_date,overview,vote_average,popularity,"
+                "genre_ids from movie where title like \"%" + movie_name + "%\"";
+        query.append(oss.str());
+
+        res = stmt->executeQuery(query);
+
+        string col[] = {"Id", "Title", "Release Date", "Overview", "Vote_average", "Popularity",
+                        "Genre Id"};
+
+        while (res->next()) {
+
+            string row;
+            for (int i = 0; i < 7; i++) {
+                if (i == 0 || i == 6) {
+                    oss << res->getInt(i + 1);
+                    row.append(col[i]);
+                    row.append("\t");
+                    row.append(oss.str());
+                    row.append("\n");
+                } else if (i == 4 || i == 5) {
+                    oss << res->getDouble(i + 1);
+                    row.append(col[i]);
+                    row.append("\t");
+                    row.append(oss.str());
+                    row.append("\n");
+                } else {
+                    row.append(col[i]);
+                    row.append("\t");
+                    row.append(res->getString(i + 1).c_str());
+                    row.append("\n");
+                }
+            }
+
+            char buff[1024];
+            strcpy(buff, row.c_str());
+            send(client_socket, buff, sizeof(buff), 0);
+            cout << buff << endl;
+        }
+
+        char end[1024] = "-1";
+        send(client_socket, end, 1024, 0);
+
+        delete res;
+        delete stmt;
+        delete con;
+    }
+}
+*/
+
+void send_movie_poster(int client_socket, int movie_id) {
 
     ostringstream os;
-    os<<movie_id;
+    os << movie_id;
 
-    string path = "../images/"+os.str()+".jpg";
-    ifstream poster(path,ios::binary);
+    string path = "../images/" + os.str() + ".jpg";
+    ifstream poster(path, ios::binary);
 
     char buffer[1024];
 
-    while(poster.read(buffer,1024) || poster.gcount() != 0  )
-        send(client_socket,buffer,sizeof(buffer),0);
+    while (poster.read(buffer, 1024) || poster.gcount() != 0)
+        send(client_socket, buffer, sizeof(buffer), 0);
 
     char end[1024] = "-1";
-    send(client_socket,end,1024,0);
+    send(client_socket, end, 1024, 0);
 
     poster.close();
 
 }
 
-void *communicate(void * temp_client_socket){
-    int client_socket = *((int *)temp_client_socket);
-    send_movie_list(client_socket);
-    char no[128];
-    recv(client_socket,no, sizeof(no),0);
-    int movie_id = atoi(no);
-    send_movie_details(client_socket,movie_id);
-//    cout << n <<"..............."<<no;
-    send_movie_poster(client_socket,movie_id);
+void *communicate(void *temp_client_socket) {
+    int client_socket = *((int *) temp_client_socket);
+    char type_c[128];
+    recv(client_socket, type_c, sizeof(type_c), 0);
+    int request_type = atoi(type_c);
+
+    // If a new entry has to be updated
+    if (request_type == UPLOAD){
+
+    }
+    else {
+        // If we want list go to send_movie_list() it give give right list
+        if (request_type == BY_POPULARITY || request_type == BY_DATE) {
+            send_movie_list(client_socket, request_type, NULL);
+        }
+            // If we are searching by name then we have to get movie detail by name
+        else if (request_type == BY_NAME) {
+            // First Read the movie name
+            char buff[1024];
+            recv(client_socket, buff, 1024, 0);
+            string movie_name = buff;
+            // Send list of movie matching
+            send_movie_list(client_socket, request_type, movie_name);
+        } else {
+            cout << "Wrong Choice";
+        }
+        char no[128];
+        recv(client_socket, no, sizeof(no), 0);
+        int movie_id = atoi(no);
+        send_movie_details(client_socket, movie_id);
+        send_movie_poster(client_socket, movie_id);
+    }
 }
 
-int main(){
+int main() {
 
-    int server_socket,client_socket;
-    struct sockaddr_in my_address,client_address;
+    int server_socket, client_socket;
+    struct sockaddr_in my_address, client_address;
     int clinet_size = sizeof(client_address);
 
-    server_socket = socket(AF_INET,SOCK_STREAM,0);
+    server_socket = socket(AF_INET, SOCK_STREAM, 0);
 
     my_address.sin_family = AF_INET;
     my_address.sin_addr.s_addr = INADDR_ANY;
     my_address.sin_port = htons(PORTNO);
 
-    bind(server_socket,(struct sockaddr *)&my_address, sizeof(my_address));
+    bind(server_socket, (struct sockaddr *) &my_address, sizeof(my_address));
 
-    while(true){
-        listen(server_socket,50);
+    while (true) {
+        listen(server_socket, 50);
 
-        cout << "listening"<<endl;
-        if((client_socket = accept(server_socket,(struct sockaddr *) &client_address,
-                                   (socklen_t *)(&clinet_size))) <0){
-            cout << "Error" <<endl;
+        cout << "listening" << endl;
+        if ((client_socket = accept(server_socket, (struct sockaddr *) &client_address,
+                                    (socklen_t *) (&clinet_size))) < 0) {
+            cout << "Error" << endl;
         }
 
         //char* h = "Hello";
-        cout << client_socket <<endl;
-        cout<< "Starting Giving Data"<<endl;
+        cout << client_socket << endl;
+        cout << "Starting Giving Data" << endl;
         pthread_t thread;
-        pthread_create(&thread,NULL,communicate,(void *)&client_socket);
+        pthread_create(&thread, NULL, communicate, (void *) &client_socket);
 //        communicate(client_socket);
 
     }
     return 0;
 }
-
-
-
-
-////
-//// Created by gaurav on 15/8/17.
-////
-//
-//#include <netinet/in.h>
-//#include "iostream"
-//#include "sys/socket.h"
-//#include <mysql_driver.h>
-//#include <cstring>
-//#include <sstream>
-//#include "mysql_connection.h"
-//
-//#include "cppconn/statement.h"
-//#include "Classes.cpp"
-//
-//using namespace sql;
-//
-//using namespace std;
-//
-//void send_movie_list(int client_socket){
-//    sql::Driver *driver;
-//    sql::Connection *con;
-//    sql::Statement *stmt;
-//    sql::ResultSet *res;
-//
-//    driver = get_driver_instance();
-//    con = driver->connect("tcp://127.0.0.1:3306", "root", "0882");
-//
-//    if(con->isValid()) {
-//
-//        stmt = con->createStatement();
-//        stmt->execute("USE moviedb");
-//
-//        res = stmt->executeQuery("Select id,title from movie");
-//
-////        send(client_socket,&title,sizeof(title),0);
-//
-//        string buffer = "ID \t Title\n";
-//        while(res->next()){
-//            ostringstream oss;
-//            oss<<res->getInt(1);
-////
-////            movie obj(res->getInt(1),res->getString(2));
-////            obj.print_table();
-////            send(client_socket,&obj,sizeof(obj),0);
-//
-//            string entry;
-//            entry.append(oss.str());
-////            entry.append(std::to_string(res->getInt(1)));
-//            entry.append("\t");
-//            entry.append(res->getString(2));
-//            entry.append("\n");
-//
-//            int a = send(client_socket,&entry,sizeof(entry),0);
-//            cout<<entry<<"................."<<a;
-//        }
-//
-////        char buff[1024];
-////        strcpy(buff,buffer.c_str());
-////        send(client_socket,buff,sizeof(buff),0);
-////        cout<<"Sending...\n"<<buff;
-////        cout<<sizeof(buff);
-////        cout<< res->getInt(1) << "\t" << res->getString(2) <<endl;
-//
-//        delete res;
-//        delete stmt;
-//        delete con;
-//    }
-//}
-//
-//int main(){
-//
-//    int server_socket,client_socket;
-//    struct sockaddr_in my_address,client_address;
-//    int clinet_size = sizeof(client_address);
-//
-//    server_socket = socket(AF_INET,SOCK_STREAM,0);
-//
-//    my_address.sin_family = AF_INET;
-//    my_address.sin_addr.s_addr = INADDR_ANY;
-//    my_address.sin_port = htons(8080);
-//
-//    bind(server_socket,(struct sockaddr *)&my_address, sizeof(my_address));
-//
-//    while(true){
-//        listen(server_socket,50);
-//
-//        cout << "listening"<<endl;
-//        if((client_socket = accept(server_socket,(struct sockaddr *) &client_address,
-//                               (socklen_t *)(&clinet_size))) <0){
-//            cout << "Error" <<endl;
-//        }
-//
-//        //char* h = "Hello";
-//        cout << client_socket <<endl;
-//        cout<< "Starting Giving Data"<<endl;
-//        send_movie_list(client_socket);
-//
-//    }
-//    return 0;
-//}
