@@ -250,7 +250,7 @@ void send_movie_poster(int client_socket, int movie_id) {
 void update_movie_rating(int rating,int id){
     sql::Connection *con;
     sql::Statement *stmt;
-    sql::ResultSet *res;
+    sql::ResultSet *res,*update;
 
     con = driver->connect("tcp://127.0.0.1:3306", "root", "0882");
 
@@ -266,26 +266,32 @@ void update_movie_rating(int rating,int id){
 
         res = stmt->executeQuery(query);
 
-        int count;
-        double current_rating;
+        while(res->next()) {
+            int count;
+            double current_rating;
 
-        count = res->getInt(1);
-        current_rating = res->getDouble(2);
+            count = res->getInt(1);
+            current_rating = res->getDouble(2);
 
-        double sum = count*current_rating;
-        count+=1;
+            double sum = count * current_rating;
+            count += 1;
 
-        double new_rating = (sum+rating)/count;
+            double new_rating = (sum + rating) / count;
 
-        ostringstream count_oss, rating_oss;
-        count_oss<<count;
-        rating_oss<<new_rating;
-        string update_query = "update table movie set vote_count "
-                                      "= "+count_oss.str()+",vote_average="+rating_oss.str()+" "
-                "where id = "+oss.str();
+            ostringstream count_oss, rating_oss;
+            count_oss << count;
+            rating_oss << new_rating;
+            string update_query = "update table movie set vote_count "
+                                          "= " + count_oss.str() + ",vote_average=" + rating_oss.str() + " "
+                                          "where id = " + oss.str();
 
-        res = stmt->executeQuery(update_query);
+            update = stmt->executeQuery(update_query);
+        }
     }
+    delete res;
+    delete update;
+    delete stmt;
+    delete con;
 }
 
 void *communicate(void *temp_client_socket) {
