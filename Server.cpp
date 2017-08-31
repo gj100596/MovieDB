@@ -35,15 +35,14 @@ the real business of your application.
 using namespace sql;
 using namespace std;
 
+sql::Driver *driver;
+
 
 sql::ResultSet* get_right_movie_list(int type,string movie_name) {
-
-    sql::Driver *driver;
     sql::Connection *con;
     sql::Statement *stmt;
     sql::ResultSet *res;
 
-    driver = get_driver_instance();
     con = driver->connect("tcp://127.0.0.1:3306", "root", "0882");
 
     if (con->isValid()) {
@@ -102,12 +101,10 @@ void send_movie_list(int client_socket, int type,string movie_name) {
 }
 
 void send_movie_details(int client_socket,int id) {
-    sql::Driver *driver;
     sql::Connection *con;
     sql::Statement *stmt;
     sql::ResultSet *res;
 
-    driver = get_driver_instance();
     con = driver->connect("tcp://127.0.0.1:3306", "root", "0882");
 
     if (con->isValid()) {
@@ -300,6 +297,8 @@ int main() {
     my_address.sin_port = htons(PORTNO);
 
     bind(server_socket, (struct sockaddr *) &my_address, sizeof(my_address));
+
+    driver = get_driver_instance();
 
     while (true) {
         listen(server_socket, 50);
