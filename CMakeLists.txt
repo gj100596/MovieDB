@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(SOURCE_FILES main.cpp Classes.cpp)
 find_package( OpenCV REQUIRED )
 
+
 add_executable(moviedb ${SOURCE_FILES})
 add_executable(server Server.cpp)
 add_executable(client Client.cpp)
