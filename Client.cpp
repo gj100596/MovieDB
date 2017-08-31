@@ -28,36 +28,10 @@ using namespace std;
 //    send(my_socket,inp, sizeof(inp),0);
 //}
 
-void send_oss_str_to_socket(int my_socket, string str) {
+void send_str_to_socket(int my_socket, string str) {
     char buff[1024];
     strcpy(buff, str.c_str());
     send(my_socket, buff, sizeof(buff), 0);
-}
-
-void receive_movie_detail(int my_socket) {
-    cout << "\n Movie Details: " << endl;
-    char buff[1024];
-    while (recv(my_socket, buff, 1024, 0) > 0) {
-        string s = buff;
-        if (s.compare("-1") == 0) {
-            break;
-        }
-        cout << buff;
-    }
-}
-
-void receive_movie_list(int my_socket) {
-    char buff[1024];
-    int n;
-    cout << "ID\tMovie Title\n";
-    while ((n = recv(my_socket, buff, 1024, 0)) > 0) {
-        string s = buff;
-        if (s.compare("-1") == 0) {
-            break;
-        }
-        cout << buff;
-    }
-
 }
 
 void open_image(char *abs_path) {
@@ -94,6 +68,33 @@ void get_movie_poster(int my_socket) {
     open_image(path);//Absolute Path
 }
 
+void receive_movie_detail(int my_socket) {
+    cout << "\n Movie Details: " << endl;
+    char buff[1024];
+    while (recv(my_socket, buff, 1024, 0) > 0) {
+        string s = buff;
+        if (s.compare("-1") == 0) {
+            break;
+        }
+        cout << buff;
+    }
+    get_movie_poster(my_socket);
+}
+
+void receive_movie_list(int my_socket) {
+    char buff[1024];
+    int n;
+    cout << "ID\tMovie Title\n";
+    while ((n = recv(my_socket, buff, 1024, 0)) > 0) {
+        string s = buff;
+        if (s.compare("-1") == 0) {
+            break;
+        }
+        cout << buff;
+    }
+
+}
+
 int ask_for_movie_id(int my_socket) {
     //Ask Movie ID for getting Movie Details
     cout << "\nEnter movie id for details: ";
@@ -101,14 +102,13 @@ int ask_for_movie_id(int my_socket) {
     cin >> movie_id;
     ostringstream oss;
     oss << movie_id;
-    send_oss_str_to_socket(my_socket, oss.str());
+    send_str_to_socket(my_socket, oss.str());
 }
 
 void handle_movie_listing(int my_socket) {
     receive_movie_list(my_socket);
     ask_for_movie_id(my_socket);
     receive_movie_detail(my_socket);
-    get_movie_poster(my_socket);
 }
 
 int ask_request_type() {
@@ -124,7 +124,11 @@ int ask_request_type() {
 }
 
 void search_by_name(int my_socket) {
-
+    string movie_name;
+    cout<<"Enter movie name: ";
+    cin>>movie_name;
+    send_str_to_socket(my_socket,movie_name);
+    handle_movie_listing(my_socket);
 }
 
 void upload_movie_details(int my_socket) {
@@ -144,8 +148,7 @@ int main() {
     int request_type = ask_request_type();
     ostringstream oss;
     oss << request_type;
-    cout << oss.str();
-    send_oss_str_to_socket(my_socket, oss.str());
+    send_str_to_socket(my_socket, oss.str());
     switch (request_type) {
         case LIST_BY_POPULARITY:
         case LIST_BY_RELEASE_DATE:
