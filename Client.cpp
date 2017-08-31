@@ -95,7 +95,7 @@ void receive_movie_list(int my_socket) {
 
 }
 
-int ask_for_movie_id(int my_socket) {
+void ask_for_movie_id(int my_socket) {
     //Ask Movie ID for getting Movie Details
     cout << "\nEnter movie id for details: ";
     int movie_id;
@@ -105,10 +105,44 @@ int ask_for_movie_id(int my_socket) {
     send_str_to_socket(my_socket, oss.str());
 }
 
+int ask_for_rating(){
+    float rating;
+    cout<<"Rate on the scale of 1 to 10: ";
+    cin>>rating;
+    if(rating<1){
+        rating=1;
+    }else if(rating>10){
+        rating = 10;
+    }else{
+        rating=(int)rating;
+    }
+    return (int) rating;
+}
+
+void ask_for_movie_rating(int my_socket){
+    char option;
+    cout<<"Would you like to rate this movie(y/N): ";
+    cin>>option;
+    if(option=='y' or option=='Y'){
+        ostringstream oss;
+        oss<<RATE_MOVIE;
+        send_str_to_socket(my_socket,oss.str());
+        int rating;
+        rating = ask_for_rating();
+        oss.clear();
+        oss<<rating;
+        send_str_to_socket(my_socket,oss.str());
+        cout<<"Thank you for rating the movie!"<<endl;
+    }else{
+        send_str_to_socket(my_socket,"-1");
+    }
+}
+
 void handle_movie_listing(int my_socket) {
     receive_movie_list(my_socket);
     ask_for_movie_id(my_socket);
     receive_movie_detail(my_socket);
+    ask_for_movie_rating(my_socket);
 }
 
 int ask_request_type() {
