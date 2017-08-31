@@ -247,6 +247,47 @@ void send_movie_poster(int client_socket, int movie_id) {
 
 }
 
+void update_movie_rating(int rating,int id){
+    sql::Connection *con;
+    sql::Statement *stmt;
+    sql::ResultSet *res;
+
+    con = driver->connect("tcp://127.0.0.1:3306", "root", "0882");
+
+    if (con->isValid()) {
+
+        stmt = con->createStatement();
+        stmt->execute("USE moviedb");
+
+        ostringstream oss;
+        string query = "select vote_count,vote_average from movie where id =";
+        oss << id;
+        query.append(oss.str());
+
+        res = stmt->executeQuery(query);
+
+        int count;
+        double current_rating;
+
+        count = res->getInt(1);
+        current_rating = res->getDouble(2);
+
+        double sum = count*current_rating;
+        count+=1;
+
+        double new_rating = (sum+rating)/count;
+
+        ostringstream count_oss, rating_oss;
+        count_oss<<count;
+        rating_oss<<new_rating;
+        string update_query = "update table movie set vote_count "
+                                      "= "+count_oss.str()+",vote_average="+rating_oss.str()+" "
+                "where id = "+oss.str();
+
+        res = stmt->executeQuery(update_query);
+    }
+}
+
 void *communicate(void *temp_client_socket) {
     int client_socket = *((int *) temp_client_socket);
     char type_c[1024];
@@ -275,12 +316,23 @@ void *communicate(void *temp_client_socket) {
         }
 
         char no[1024];
-
         recv(client_socket, no, sizeof(no), 0);
-        cout << no;
         int movie_id = atoi(no);
         send_movie_details(client_socket, movie_id);
         send_movie_poster(client_socket, movie_id);
+
+        char change[1024];
+        recv(client_socket, change, sizeof(change), 0);
+        int change_rating = atoi(change);
+
+        if (change_rating == RATE_MOVIE){
+            char rating[1024];
+            recv(client_socket, rating, sizeof(rating), 0);
+            int new_rating = atoi(rating);
+            update_movie_rating(new_rating,movie_id);
+        }
+
+
     }
 }
 
