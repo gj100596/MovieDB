@@ -36,14 +36,12 @@ using namespace sql;
 using namespace std;
 
 sql::Driver *driver;
+sql::Connection *con;
 
 
-sql::ResultSet* get_right_movie_list(int type,string movie_name) {
-    sql::Connection *con;
+sql::ResultSet* get_right_movie_list(int type,string movie_name,sql::Connection *con) {
     sql::Statement *stmt;
     sql::ResultSet *res;
-
-    con = driver->connect("tcp://127.0.0.1:3306", "root", "0882");
 
     if (con->isValid()) {
 
@@ -62,7 +60,7 @@ sql::ResultSet* get_right_movie_list(int type,string movie_name) {
         else{
             return  NULL;
         }
-
+        delete stmt;
         return res;
     } else {
         delete  res;
@@ -73,10 +71,10 @@ sql::ResultSet* get_right_movie_list(int type,string movie_name) {
     }
 }
 
-void send_movie_list(int client_socket, int type,string movie_name) {
+void send_movie_list(int client_socket, int type,string movie_name,sql::Connection *con) {
     sql::ResultSet *res;
 
-    res = get_right_movie_list(type,movie_name);
+    res = get_right_movie_list(type,movie_name,con);
 
     while (res->next()) {
         ostringstream oss;
@@ -100,12 +98,9 @@ void send_movie_list(int client_socket, int type,string movie_name) {
     delete res;
 }
 
-void send_movie_details(int client_socket,int id) {
-    sql::Connection *con;
+void send_movie_details(int client_socket,int id,sql::Connection *con) {
     sql::Statement *stmt;
     sql::ResultSet *res;
-
-    con = driver->connect("tcp://127.0.0.1:3306", "root", "0882");
 
     if (con->isValid()) {
         ostringstream oss;
@@ -128,16 +123,18 @@ void send_movie_details(int client_socket,int id) {
             string row;
             for (int i = 0; i < 7; i++) {
                 if (i == 0 || i == 6) {
-                    oss << res->getInt(i + 1);
+                    ostringstream s;
+                    s << res->getInt(i + 1);
                     row.append(col[i]);
                     row.append("\t");
-                    row.append(oss.str());
+                    row.append(s.str());
                     row.append("\n");
                 } else if (i == 4 || i == 5) {
-                    oss << res->getDouble(i + 1);
+                    ostringstream s;
+                    s << res->getDouble(i + 1);
                     row.append(col[i]);
                     row.append("\t");
-                    row.append(oss.str());
+                    row.append(s.str());
                     row.append("\n");
                 } else {
                     row.append(col[i]);
@@ -158,74 +155,8 @@ void send_movie_details(int client_socket,int id) {
 
         delete res;
         delete stmt;
-        delete con;
     }
 }
-
-/*
-void send_movie_details(int client_socket,string movie_name) {
-    sql::Driver *driver;
-    sql::Connection *con;
-    sql::Statement *stmt;
-    sql::ResultSet *res;
-
-    driver = get_driver_instance();
-    con = driver->connect("tcp://127.0.0.1:3306", "root", "0882");
-
-    if (con->isValid()) {
-        ostringstream oss;
-
-        stmt = con->createStatement();
-        stmt->execute("USE moviedb");
-
-        string query = "select id,title,release_date,overview,vote_average,popularity,"
-                "genre_ids from movie where title like \"%" + movie_name + "%\"";
-        query.append(oss.str());
-
-        res = stmt->executeQuery(query);
-
-        string col[] = {"Id", "Title", "Release Date", "Overview", "Vote_average", "Popularity",
-                        "Genre Id"};
-
-        while (res->next()) {
-
-            string row;
-            for (int i = 0; i < 7; i++) {
-                if (i == 0 || i == 6) {
-                    oss << res->getInt(i + 1);
-                    row.append(col[i]);
-                    row.append("\t");
-                    row.append(oss.str());
-                    row.append("\n");
-                } else if (i == 4 || i == 5) {
-                    oss << res->getDouble(i + 1);
-                    row.append(col[i]);
-                    row.append("\t");
-                    row.append(oss.str());
-                    row.append("\n");
-                } else {
-                    row.append(col[i]);
-                    row.append("\t");
-                    row.append(res->getString(i + 1).c_str());
-                    row.append("\n");
-                }
-            }
-
-            char buff[1024];
-            strcpy(buff, row.c_str());
-            send(client_socket, buff, sizeof(buff), 0);
-            cout << buff << endl;
-        }
-
-        char end[1024] = "-1";
-        send(client_socket, end, 1024, 0);
-
-        delete res;
-        delete stmt;
-        delete con;
-    }
-}
-*/
 
 void send_movie_poster(int client_socket, int movie_id) {
 
@@ -247,12 +178,9 @@ void send_movie_poster(int client_socket, int movie_id) {
 
 }
 
-void update_movie_rating(int rating,int id){
-    sql::Connection *con;
+void update_movie_rating(int rating,int id,sql::Connection *con){
     sql::Statement *stmt;
     sql::ResultSet *res;
-
-    con = driver->connect("tcp://127.0.0.1:3306", "root", "0882");
 
     if (con->isValid()) {
 
@@ -290,7 +218,6 @@ void update_movie_rating(int rating,int id){
     }
     delete res;
     delete stmt;
-    delete con;
 }
 
 void *communicate(void *temp_client_socket) {
@@ -306,7 +233,7 @@ void *communicate(void *temp_client_socket) {
     else {
         // If we want list go to send_movie_list() it give give right list
         if (request_type == BY_POPULARITY || request_type == BY_DATE) {
-            send_movie_list(client_socket, request_type, "");
+            send_movie_list(client_socket, request_type, "",con);
         }
             // If we are searching by name then we have to get movie detail by name
         else if (request_type == BY_NAME) {
@@ -315,7 +242,7 @@ void *communicate(void *temp_client_socket) {
             recv(client_socket, buff, 1024, 0);
             string movie_name = buff;
             // Send list of movie matching
-            send_movie_list(client_socket, request_type, movie_name);
+            send_movie_list(client_socket, request_type, movie_name,con);
         } else {
             cout << "Wrong Choice";
         }
@@ -323,7 +250,7 @@ void *communicate(void *temp_client_socket) {
         char no[1024];
         recv(client_socket, no, sizeof(no), 0);
         int movie_id = atoi(no);
-        send_movie_details(client_socket, movie_id);
+        send_movie_details(client_socket, movie_id,con);
         send_movie_poster(client_socket, movie_id);
 
         char change[1024];
@@ -334,10 +261,8 @@ void *communicate(void *temp_client_socket) {
             char rating[1024];
             recv(client_socket, rating, sizeof(rating), 0);
             int new_rating = atoi(rating);
-            update_movie_rating(new_rating,movie_id);
+            update_movie_rating(new_rating,movie_id,con);
         }
-
-
     }
 }
 
@@ -356,6 +281,7 @@ int main() {
     bind(server_socket, (struct sockaddr *) &my_address, sizeof(my_address));
 
     driver = get_driver_instance();
+    con = driver->connect("tcp://127.0.0.1:3306", "root", "0882");
 
     while (true) {
         listen(server_socket, 50);
@@ -372,7 +298,6 @@ int main() {
         pthread_t thread;
         pthread_create(&thread, NULL, communicate, (void *) &client_socket);
 //        communicate(client_socket);
-
     }
     return 0;
 }

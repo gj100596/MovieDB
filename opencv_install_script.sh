@@ -12,12 +12,15 @@ sudo apt-get install cmake git libgtk2.0-dev pkg-config libavcodec-dev libavform
 #Downloading OpenCV source files
 #download sources into “/opt/” folder
 cd /opt
+sudo rm -r opencv
+sudo rm -r opencv_contrib
 sudo git clone https://github.com/Itseez/opencv.git
 sudo git clone https://github.com/Itseez/opencv_contrib.git
 
 #Pre-Build Configuration
 cd /opt
 sudo chmod 777 opencv
+sudo chmod 777 opencv_contrib
 cd /opt/opencv
 sudo mkdir release
 cd release
