@@ -87,7 +87,7 @@ void send_movie_list(int client_socket, int type,string movie_name,sql::Connecti
 
         char buff[1024];
         strcpy(buff, entry.c_str());
-        send(client_socket, buff, sizeof(buff), 0);
+        send(client_socket, buff, 1024, 0);
         cout << res->getInt(1) << "\t" << res->getString(2) << endl;
 
     }
@@ -146,7 +146,7 @@ void send_movie_details(int client_socket,int id,sql::Connection *con) {
 
             char buff[1024];
             strcpy(buff, row.c_str());
-            send(client_socket, buff, sizeof(buff), 0);
+            send(client_socket, buff, 1024, 0);
             cout << buff << endl;
         }
 
@@ -169,7 +169,7 @@ void send_movie_poster(int client_socket, int movie_id) {
     char buffer[1024];
 
     while (poster.read(buffer, 1024) || poster.gcount() != 0)
-        send(client_socket, buffer, sizeof(buffer), 0);
+        send(client_socket, buffer, 1024, 0);
 
     char end[1024] = "-1";
     send(client_socket, end, 1024, 0);
@@ -223,7 +223,7 @@ void update_movie_rating(int rating,int id,sql::Connection *con){
 void *communicate(void *temp_client_socket) {
     int client_socket = *((int *) temp_client_socket);
     char type_c[1024];
-    recv(client_socket, type_c, sizeof(type_c), 0);
+    recv(client_socket, type_c, 1024, 0);
     int request_type = atoi(type_c);
 
     // If a new entry has to be updated
@@ -248,18 +248,18 @@ void *communicate(void *temp_client_socket) {
         }
 
         char no[1024];
-        recv(client_socket, no, sizeof(no), 0);
+        recv(client_socket, no, 1024, 0);
         int movie_id = atoi(no);
         send_movie_details(client_socket, movie_id,con);
         send_movie_poster(client_socket, movie_id);
 
         char change[1024];
-        recv(client_socket, change, sizeof(change), 0);
+        recv(client_socket, change, 1024, 0);
         int change_rating = atoi(change);
 
         if (change_rating == RATE_MOVIE){
             char rating[1024];
-            recv(client_socket, rating, sizeof(rating), 0);
+            recv(client_socket, rating, 1024, 0);
             int new_rating = atoi(rating);
             update_movie_rating(new_rating,movie_id,con);
         }
