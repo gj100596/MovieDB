@@ -15,8 +15,8 @@
 #define LIST_BY_POPULARITY 1
 #define LIST_BY_RELEASE_DATE 2
 #define SEARCH_BY_NAME 3
-#define UPLOAD_MOVIE_DETAILS 4
-#define RATE_MOVIE 5
+#define RATE_MOVIE 4
+
 #define PORTNO 8085
 using namespace cv;
 using namespace std;
@@ -165,7 +165,6 @@ int ask_request_type() {
     cout << LIST_BY_POPULARITY << " Get movie list sorted by popularity" << endl;
     cout << LIST_BY_RELEASE_DATE << " Get movie list sorted by release date" << endl;
     cout << SEARCH_BY_NAME << " Search movies by name" << endl;
-    cout << UPLOAD_MOVIE_DETAILS << " Upload a new movie details" << endl;
     cout << "Enter your choice: ";
     cin >> request_no;
     return request_no;
@@ -180,10 +179,6 @@ void search_by_name(int my_socket) {
     handle_movie_listing(my_socket);
 }
 
-void upload_movie_details(int my_socket) {
-    sleep(1);
-
-}
 
 int main() {
     int my_socket;
@@ -206,9 +201,6 @@ int main() {
             break;
         case SEARCH_BY_NAME:
             search_by_name(my_socket);
-            break;
-        case UPLOAD_MOVIE_DETAILS:
-            upload_movie_details(my_socket);
             break;
         default:
             break;

@@ -24,6 +24,7 @@ the real business of your application.
 #include <fstream>
 #include "mysql_connection.h"
 #include "cppconn/statement.h"
+#include <mutex>
 
 #define PORTNO 8090
 #define BY_POPULARITY 1
@@ -38,6 +39,7 @@ using namespace std;
 sql::Driver *driver;
 sql::Connection *con;
 
+std::mutex mtx;
 
 sql::ResultSet* get_right_movie_list(int type,string movie_name,sql::Connection *con) {
     sql::Statement *stmt;
@@ -212,8 +214,9 @@ void update_movie_rating(int rating,int id,sql::Connection *con){
             string update_query = "update movie set vote_count "
                                           "= " + count_oss.str() + ",vote_average=" + rating_oss.str() + " "
                                           "where id = " + oss.str();
-
+            mtx.lock();
             int update = stmt->executeUpdate(update_query);
+            mtx.unlock();
         }
     }
     delete res;
