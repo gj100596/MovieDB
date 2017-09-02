@@ -17,7 +17,7 @@
 #define SEARCH_BY_NAME 3
 #define UPLOAD_MOVIE_DETAILS 4
 #define RATE_MOVIE 5
-#define PORTNO 8090
+#define PORTNO 8085
 using namespace cv;
 using namespace std;
 
@@ -28,10 +28,13 @@ using namespace std;
 //    send(my_socket,inp, sizeof(inp),0);
 //}
 
+//string ipaddress ="127.0.0.1";
+string ipaddress ="10.16.23.85";
+
 void send_str_to_socket(int my_socket, string str) {
     char buff[1024];
     strcpy(buff, str.c_str());
-    send(my_socket, buff, sizeof(buff), 0);
+    send(my_socket, buff, 1024, 0);
 }
 
 void open_image(char *abs_path) {
@@ -54,9 +57,11 @@ void get_movie_poster(int my_socket) {
     char *path = "/tmp/poster.jpg";
     fstream poster;
     poster.open(path, ios::out | ios::binary);
-
-    while ((recv(my_socket, buff, 1024, 0)) > 0) {
+    int n;
+    sleep(2);
+    while ((n=recv(my_socket, buff, 1024, 0)) > 0) {
         string s = buff;
+        //cout<<n<<endl;
         if (s.compare("-1") == 0) {
             break;
         }
@@ -76,8 +81,10 @@ void get_movie_poster(int my_socket) {
 void receive_movie_detail(int my_socket) {
     cout << "\n Movie Details: " << endl;
     char buff[1024];
-    while (recv(my_socket, buff, 1024, 0) > 0) {
+    int n;
+    while (n=recv(my_socket, buff, 1024, 0) > 0) {
         string s = buff;
+        //cout<<n<<endl;
         if (s.compare("-1") == 0) {
             break;
         }
@@ -92,6 +99,7 @@ void receive_movie_list(int my_socket) {
     cout << "ID\tMovie Title\n";
     while ((n = recv(my_socket, buff, 1024, 0)) > 0) {
         string s = buff;
+        //cout<<n<<endl;
         if (s.compare("-1") == 0) {
             break;
         }
@@ -144,6 +152,7 @@ void ask_for_movie_rating(int my_socket){
 }
 
 void handle_movie_listing(int my_socket) {
+    sleep(1);
     receive_movie_list(my_socket);
     ask_for_movie_id(my_socket);
     receive_movie_detail(my_socket);
@@ -163,6 +172,7 @@ int ask_request_type() {
 }
 
 void search_by_name(int my_socket) {
+    sleep(1);
     string movie_name;
     cout<<"Enter movie name: ";
     cin>>movie_name;
@@ -171,6 +181,7 @@ void search_by_name(int my_socket) {
 }
 
 void upload_movie_details(int my_socket) {
+    sleep(1);
 
 }
 
@@ -181,7 +192,7 @@ int main() {
     my_socket = socket(AF_INET, SOCK_STREAM, 0);
     server_address.sin_family = AF_INET;
     server_address.sin_port = htons(PORTNO);
-    inet_aton("127.0.0.1", &server_address.sin_addr);
+    inet_aton(ipaddress.c_str(), &server_address.sin_addr);
     connect(my_socket, (sockaddr *) &server_address, sizeof(server_address));
     //Ask for request type (All type of Search or Upload)
     int request_type = ask_request_type();
