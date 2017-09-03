@@ -37,7 +37,7 @@ void send_str_to_socket(int my_socket, string str) {
     send(my_socket, buff, 1024, 0);
 }
 
-void open_image(char *abs_path) {
+void open_image(const char *abs_path) {
     Mat image;
     image = imread(abs_path, CV_LOAD_IMAGE_COLOR);      // Read the file
     if (!image.data) {                                   // Check for invalid input
@@ -50,18 +50,19 @@ void open_image(char *abs_path) {
     waitKey(0);                                         // Wait for a keystroke in the window
 }
 
-void get_movie_poster(int my_socket) {
+void get_movie_poster(int my_socket,int movie_id) {
 
     cout << "\nDownloading Poster...\n";
     char buff[1024];
-    char *path = "/tmp/poster.jpg";
+    ostringstream oss;
+    oss<<"/tmp/"<<movie_id<<".jpg";
+    const char* path= oss.str().c_str();
     fstream poster;
     poster.open(path, ios::out | ios::binary);
     int n;
     sleep(2);
     while ((n=recv(my_socket, buff, 1024, 0)) > 0) {
         string s = buff;
-        //cout<<n<<endl;
         if (s.compare("-1") == 0) {
             break;
         }
@@ -78,7 +79,7 @@ void get_movie_poster(int my_socket) {
     }
 }
 
-void receive_movie_detail(int my_socket) {
+void receive_movie_detail(int my_socket,int movie_id) {
     cout << "\n Movie Details: " << endl;
     char buff[1024];
     int n;
@@ -90,7 +91,7 @@ void receive_movie_detail(int my_socket) {
         }
         cout << buff;
     }
-    get_movie_poster(my_socket);
+    get_movie_poster(my_socket,movie_id);
 }
 
 void receive_movie_list(int my_socket) {
@@ -108,7 +109,7 @@ void receive_movie_list(int my_socket) {
 
 }
 
-void ask_for_movie_id(int my_socket) {
+int ask_for_movie_id(int my_socket) {
     //Ask Movie ID for getting Movie Details
     cout << "\nEnter movie id for details: ";
     int movie_id;
@@ -116,6 +117,7 @@ void ask_for_movie_id(int my_socket) {
     ostringstream oss;
     oss << movie_id;
     send_str_to_socket(my_socket, oss.str());
+    return atoi(oss.str().c_str());
 }
 
 int get_and_check_rating(){
@@ -154,8 +156,8 @@ void ask_for_movie_rating(int my_socket){
 void handle_movie_listing(int my_socket) {
     sleep(1);
     receive_movie_list(my_socket);
-    ask_for_movie_id(my_socket);
-    receive_movie_detail(my_socket);
+  int movie_id=ask_for_movie_id(my_socket);
+    receive_movie_detail(my_socket,movie_id);
     ask_for_movie_rating(my_socket);
 }
 
