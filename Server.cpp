@@ -26,7 +26,7 @@ the real business of your application.
 #include "cppconn/statement.h"
 #include <mutex>
 
-#define PORTNO 8090
+#define PORTNO 8092
 #define BY_POPULARITY 1
 #define BY_DATE 2
 #define BY_NAME 3
