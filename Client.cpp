@@ -17,7 +17,7 @@
 #define SEARCH_BY_NAME 3
 #define RATE_MOVIE 4
 
-#define PORTNO 8085
+#define PORTNO 8090
 using namespace cv;
 using namespace std;
 
@@ -28,8 +28,8 @@ using namespace std;
 //    send(my_socket,inp, sizeof(inp),0);
 //}
 
-//string ipaddress ="127.0.0.1";
-string ipaddress ="10.16.23.85";
+string ipaddress ="127.0.0.1";
+//string ipaddress ="10.16.23.85";
 
 void send_str_to_socket(int my_socket, string str) {
     char buff[1024];

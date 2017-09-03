@@ -39,6 +39,7 @@ using namespace std;
 sql::Driver *driver;
 sql::Connection *con;
 
+bool writing = false;
 std::mutex mtx;
 
 sql::ResultSet* get_right_movie_list(int type,string movie_name,sql::Connection *con) {
