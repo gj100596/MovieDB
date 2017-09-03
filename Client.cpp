@@ -17,7 +17,7 @@
 #define SEARCH_BY_NAME 3
 #define RATE_MOVIE 4
 
-#define PORTNO 8090
+#define PORTNO 8091
 using namespace cv;
 using namespace std;
 

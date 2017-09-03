@@ -26,12 +26,16 @@ the real business of your application.
 #include "cppconn/statement.h"
 #include <mutex>
 
-#define PORTNO 8092
+#define PORTNO 8091
 #define BY_POPULARITY 1
 #define BY_DATE 2
 #define BY_NAME 3
-#define UPLOAD 4
-#define RATE_MOVIE 5
+#define RATE_MOVIE 4
+
+#define DB_URL "tcp://127.0.0.1:3306"
+#define DB_USER "root"
+#define DB_PASS "0882"
+
 
 using namespace sql;
 using namespace std;
@@ -39,7 +43,6 @@ using namespace std;
 sql::Driver *driver;
 sql::Connection *con;
 
-bool writing = false;
 std::mutex mtx;
 
 sql::ResultSet* get_right_movie_list(int type,string movie_name,sql::Connection *con) {
@@ -230,11 +233,6 @@ void *communicate(void *temp_client_socket) {
     recv(client_socket, type_c, 1024, 0);
     int request_type = atoi(type_c);
 
-    // If a new entry has to be updated
-    if (request_type == UPLOAD){
-
-    }
-    else {
         // If we want list go to send_movie_list() it give give right list
         if (request_type == BY_POPULARITY || request_type == BY_DATE) {
             send_movie_list(client_socket, request_type, "",con);
@@ -267,7 +265,6 @@ void *communicate(void *temp_client_socket) {
             int new_rating = atoi(rating);
             update_movie_rating(new_rating,movie_id,con);
         }
-    }
 }
 
 int main() {
@@ -285,7 +282,7 @@ int main() {
     bind(server_socket, (struct sockaddr *) &my_address, sizeof(my_address));
 
     driver = get_driver_instance();
-    con = driver->connect("tcp://127.0.0.1:3306", "root", "0882");
+    con = driver->connect(DB_URL, DB_USER,DB_PASS);
 
     while (true) {
         listen(server_socket, 50);
