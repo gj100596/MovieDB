@@ -52,16 +52,16 @@
       <file leaf-file-name="Server.cpp" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Server.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="433">
-              <caret line="223" column="9" lean-forward="true" selection-start-line="223" selection-start-column="9" selection-end-line="223" selection-end-column="9" />
+            <state relative-caret-position="54">
+              <caret line="196" column="19" lean-forward="false" selection-start-line="196" selection-start-column="19" selection-end-line="196" selection-end-column="19" />
               <folding>
                 <element signature="e#555#573#0" expanded="true" />
                 <element signature="e#1118#1993#0" expanded="false" />
                 <element signature="e#1995#2670#0" expanded="false" />
                 <element signature="e#2672#4484#0" expanded="false" />
                 <element signature="e#4486#4903#0" expanded="false" />
-                <element signature="e#6157#7608#0" expanded="false" />
-                <element signature="e#7610#8686#0" expanded="false" />
+                <element signature="e#6151#7602#0" expanded="false" />
+                <element signature="e#7604#8680#0" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -70,8 +70,8 @@
       <file leaf-file-name="Client.cpp" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Client.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="180">
-              <caret line="19" column="19" lean-forward="false" selection-start-line="19" selection-start-column="19" selection-end-line="19" selection-end-column="19" />
+            <state relative-caret-position="36">
+              <caret line="79" column="0" lean-forward="true" selection-start-line="79" selection-start-column="0" selection-end-line="79" selection-end-column="0" />
               <folding>
                 <element signature="e#39#71#0" expanded="true" />
               </folding>
@@ -102,6 +102,8 @@
       <find>upload</find>
       <find>Upload</find>
       <find>mtx</find>
+      <find>poster</find>
+      <find>pos</find>
     </findStrings>
     <replaceStrings>
       <replace>get_movie_list</replace>
@@ -352,11 +354,18 @@
       <option name="project" value="LOCAL" />
       <updated>1504379556276</updated>
     </task>
-    <option name="localTasksCounter" value="16" />
+    <task id="LOCAL-00016" summary="Removed Upload related things">
+      <created>1504430319574</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1504430319574</updated>
+    </task>
+    <option name="localTasksCounter" value="17" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="66612000" />
+    <option name="totallyTimeSpent" value="67146000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="79" y="-4" width="1303" height="780" extended-state="6" />
@@ -366,8 +375,8 @@
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Messages" active="false" anchor="bottom" auto_hide="true" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.31881803" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="CMake" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.27509293" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.39967638" sideWeight="0.50278443" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="true" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32192847" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32192847" sideWeight="0.50278884" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="true" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32192847" sideWeight="0.49721116" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32503888" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32847896" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -421,7 +430,8 @@
     <MESSAGE value="Correcting" />
     <MESSAGE value="PHASE 1 COMPLETE" />
     <MESSAGE value="Merge remote-tracking branch 'origin/master'&#10;&#10;# Conflicts:&#10;#&#9;.idea/workspace.xml&#10;#&#9;Client.cpp" />
-    <option name="LAST_COMMIT_MESSAGE" value="Merge remote-tracking branch 'origin/master'&#10;&#10;# Conflicts:&#10;#&#9;.idea/workspace.xml&#10;#&#9;Client.cpp" />
+    <MESSAGE value="Removed Upload related things" />
+    <option name="LAST_COMMIT_MESSAGE" value="Removed Upload related things" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -433,12 +443,12 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/Server.cpp</url>
-          <line>217</line>
+          <line>218</line>
           <option name="timeStamp" value="50" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/Server.cpp</url>
-          <line>207</line>
+          <line>208</line>
           <option name="timeStamp" value="51" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
@@ -487,8 +497,8 @@
             <element signature="e#1995#2670#0" expanded="false" />
             <element signature="e#2672#4484#0" expanded="false" />
             <element signature="e#4486#4903#0" expanded="false" />
-            <element signature="e#6157#7608#0" expanded="false" />
-            <element signature="e#7610#8686#0" expanded="false" />
+            <element signature="e#6151#7602#0" expanded="false" />
+            <element signature="e#7604#8680#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -510,8 +520,8 @@
             <element signature="e#1995#2670#0" expanded="false" />
             <element signature="e#2672#4484#0" expanded="false" />
             <element signature="e#4486#4903#0" expanded="false" />
-            <element signature="e#6157#7608#0" expanded="false" />
-            <element signature="e#7610#8686#0" expanded="false" />
+            <element signature="e#6151#7602#0" expanded="false" />
+            <element signature="e#7604#8680#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -550,8 +560,8 @@
             <element signature="e#1995#2670#0" expanded="false" />
             <element signature="e#2672#4484#0" expanded="false" />
             <element signature="e#4486#4903#0" expanded="false" />
-            <element signature="e#6157#7608#0" expanded="false" />
-            <element signature="e#7610#8686#0" expanded="false" />
+            <element signature="e#6151#7602#0" expanded="false" />
+            <element signature="e#7604#8680#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -590,8 +600,8 @@
             <element signature="e#1995#2670#0" expanded="false" />
             <element signature="e#2672#4484#0" expanded="false" />
             <element signature="e#4486#4903#0" expanded="false" />
-            <element signature="e#6157#7608#0" expanded="false" />
-            <element signature="e#7610#8686#0" expanded="false" />
+            <element signature="e#6151#7602#0" expanded="false" />
+            <element signature="e#7604#8680#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -647,8 +657,8 @@
             <element signature="e#1995#2670#0" expanded="false" />
             <element signature="e#2672#4484#0" expanded="false" />
             <element signature="e#4486#4903#0" expanded="false" />
-            <element signature="e#6157#7608#0" expanded="false" />
-            <element signature="e#7610#8686#0" expanded="false" />
+            <element signature="e#6151#7602#0" expanded="false" />
+            <element signature="e#7604#8680#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -687,8 +697,8 @@
             <element signature="e#1995#2670#0" expanded="false" />
             <element signature="e#2672#4484#0" expanded="false" />
             <element signature="e#4486#4903#0" expanded="false" />
-            <element signature="e#6157#7608#0" expanded="false" />
-            <element signature="e#7610#8686#0" expanded="false" />
+            <element signature="e#6151#7602#0" expanded="false" />
+            <element signature="e#7604#8680#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -710,8 +720,8 @@
             <element signature="e#1995#2670#0" expanded="false" />
             <element signature="e#2672#4484#0" expanded="false" />
             <element signature="e#4486#4903#0" expanded="false" />
-            <element signature="e#6157#7608#0" expanded="false" />
-            <element signature="e#7610#8686#0" expanded="false" />
+            <element signature="e#6151#7602#0" expanded="false" />
+            <element signature="e#7604#8680#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -750,8 +760,8 @@
             <element signature="e#1995#2670#0" expanded="false" />
             <element signature="e#2672#4484#0" expanded="false" />
             <element signature="e#4486#4903#0" expanded="false" />
-            <element signature="e#6157#7608#0" expanded="false" />
-            <element signature="e#7610#8686#0" expanded="false" />
+            <element signature="e#6151#7602#0" expanded="false" />
+            <element signature="e#7604#8680#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -807,8 +817,8 @@
             <element signature="e#1995#2670#0" expanded="false" />
             <element signature="e#2672#4484#0" expanded="false" />
             <element signature="e#4486#4903#0" expanded="false" />
-            <element signature="e#6157#7608#0" expanded="false" />
-            <element signature="e#7610#8686#0" expanded="false" />
+            <element signature="e#6151#7602#0" expanded="false" />
+            <element signature="e#7604#8680#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -915,8 +925,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Client.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="180">
-          <caret line="19" column="19" lean-forward="false" selection-start-line="19" selection-start-column="19" selection-end-line="19" selection-end-column="19" />
+        <state relative-caret-position="36">
+          <caret line="79" column="0" lean-forward="true" selection-start-line="79" selection-start-column="0" selection-end-line="79" selection-end-column="0" />
           <folding>
             <element signature="e#39#71#0" expanded="true" />
           </folding>
@@ -925,16 +935,16 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Server.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="433">
-          <caret line="223" column="9" lean-forward="true" selection-start-line="223" selection-start-column="9" selection-end-line="223" selection-end-column="9" />
+        <state relative-caret-position="54">
+          <caret line="196" column="19" lean-forward="false" selection-start-line="196" selection-start-column="19" selection-end-line="196" selection-end-column="19" />
           <folding>
             <element signature="e#555#573#0" expanded="true" />
             <element signature="e#1118#1993#0" expanded="false" />
             <element signature="e#1995#2670#0" expanded="false" />
             <element signature="e#2672#4484#0" expanded="false" />
             <element signature="e#4486#4903#0" expanded="false" />
-            <element signature="e#6157#7608#0" expanded="false" />
-            <element signature="e#7610#8686#0" expanded="false" />
+            <element signature="e#6151#7602#0" expanded="false" />
+            <element signature="e#7604#8680#0" expanded="false" />
           </folding>
         </state>
       </provider>

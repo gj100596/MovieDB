@@ -26,7 +26,7 @@ the real business of your application.
 #include "cppconn/statement.h"
 #include <mutex>
 
-#define PORTNO 8091
+#define PORTNO 8090
 #define BY_POPULARITY 1
 #define BY_DATE 2
 #define BY_NAME 3
@@ -198,6 +198,7 @@ void update_movie_rating(int rating,int id,sql::Connection *con){
         oss << id;
         query.append(oss.str());
 
+        mtx.lock();
         res = stmt->executeQuery(query);
 
         while(res->next()) {
@@ -218,10 +219,11 @@ void update_movie_rating(int rating,int id,sql::Connection *con){
             string update_query = "update movie set vote_count "
                                           "= " + count_oss.str() + ",vote_average=" + rating_oss.str() + " "
                                           "where id = " + oss.str();
-            mtx.lock();
+
             int update = stmt->executeUpdate(update_query);
-            mtx.unlock();
+
         }
+        mtx.unlock();
     }
     delete res;
     delete stmt;
