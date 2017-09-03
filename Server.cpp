@@ -1,17 +1,3 @@
-/*
-You don't need threads, you need asynchronous or "event-driven" programming.
-This can be done with select() if you want cross-platform,
-or epoll() if you're on Linux and want to support thousands of clients at once.
-
-But you don't need to implement this all from scratch--you can use Boost ASIO
-(some of which may become part of C++17) or a C library like libevent or libev or libuv.
-Those will handle a bunch of subtle details for you, and help you get more quickly to
-the real business of your application.
-*/
-//
-// Created by gaurav on 15/8/17.
-//
-
 #include <cstdlib>
 #include <pthread.h>
 
@@ -27,15 +13,17 @@ the real business of your application.
 #include <mutex>
 
 #define PORTNO 8090
+
+// Different IDs for request types
 #define BY_POPULARITY 1
 #define BY_DATE 2
 #define BY_NAME 3
 #define RATE_MOVIE 4
 
+// Database related variables
 #define DB_URL "tcp://127.0.0.1:3306"
 #define DB_USER "root"
 #define DB_PASS "0882"
-
 
 using namespace sql;
 using namespace std;
@@ -45,6 +33,15 @@ sql::Connection *con;
 
 std::mutex mtx;
 
+/**
+ * This function servers the first 2 request.
+ * It gives list of movie sorted based on type of request.
+ * @param type The request type: BY_POPULARITY or what.
+ * @param movie_name This parameter will be only there for BY_MOVIE request type.
+ *                   For others it will be empty string.
+ * @param con The global connection object passed.
+ * @return It returns pointer to result set. If no data found returns null.
+ */
 sql::ResultSet* get_right_movie_list(int type,string movie_name,sql::Connection *con) {
     sql::Statement *stmt;
     sql::ResultSet *res;
@@ -70,13 +67,19 @@ sql::ResultSet* get_right_movie_list(int type,string movie_name,sql::Connection 
         return res;
     } else {
         delete  res;
-        delete con;
         delete stmt;
-
         return NULL;
     }
 }
 
+/**
+ * The methods call get_right_movie_list() to get list of all movies.
+ * And then pass those records over socket
+ * @param client_socket The socket where data is to be passed
+ * @param type Request type. (what needed by get_right_movie_list())
+ * @param movie_name Name of movie. (what needed by get_right_movie_list())
+ * @param con Database connection. (what needed by get_right_movie_list())
+ */
 void send_movie_list(int client_socket, int type,string movie_name,sql::Connection *con) {
     sql::ResultSet *res;
 
@@ -104,6 +107,12 @@ void send_movie_list(int client_socket, int type,string movie_name,sql::Connecti
     delete res;
 }
 
+/**
+ * This method sends data of movie to user over socket.
+ * @param client_socket Socket over which data is to be passed.
+ * @param id Id of movie in DB whose details are to be given.
+ * @param con Database connection object used to get data from db.
+ */
 void send_movie_details(int client_socket,int id,sql::Connection *con) {
     sql::Statement *stmt;
     sql::ResultSet *res;
@@ -164,6 +173,11 @@ void send_movie_details(int client_socket,int id,sql::Connection *con) {
     }
 }
 
+/**
+ * This method sends movie's poster over the socket.
+ * @param client_socket Socket over which data is to be passed.
+ * @param movie_id ID of movie whose poster has to be transfered.
+ */
 void send_movie_poster(int client_socket, int movie_id) {
 
     ostringstream os;
@@ -184,6 +198,13 @@ void send_movie_poster(int client_socket, int movie_id) {
 
 }
 
+/**
+ * This function updates rating in the database.
+ * This is called only when client says it want to rate the mocie. (obvioulsy!)
+ * @param rating Rating given by client.
+ * @param id Id of movie which client has rated.
+ * @param con Databse connection variable used to connect to DB.
+ */
 void update_movie_rating(int rating,int id,sql::Connection *con){
     sql::Statement *stmt;
     sql::ResultSet *res;
@@ -229,44 +250,63 @@ void update_movie_rating(int rating,int id,sql::Connection *con){
     delete stmt;
 }
 
+/**
+ * The main driver method. It is called by the client thread.
+ * It controls the flow of what thread does.
+ * @param temp_client_socket The client socet. But it is passed as void pointer instead of
+ *                           int pointer.
+ */
 void *communicate(void *temp_client_socket) {
     int client_socket = *((int *) temp_client_socket);
+
+    // Wait for what type of request client wants to do.
     char type_c[1024];
     recv(client_socket, type_c, 1024, 0);
     int request_type = atoi(type_c);
 
-        // If we want list go to send_movie_list() it give give right list
-        if (request_type == BY_POPULARITY || request_type == BY_DATE) {
-            send_movie_list(client_socket, request_type, "",con);
-        }
-            // If we are searching by name then we have to get movie detail by name
-        else if (request_type == BY_NAME) {
-            // First Read the movie name
-            char buff[1024];
-            recv(client_socket, buff, 1024, 0);
-            string movie_name = buff;
-            // Send list of movie matching
-            send_movie_list(client_socket, request_type, movie_name,con);
-        } else {
-            cout << "Wrong Choice";
-        }
+    // If we want list go to send_movie_list() it give give right list
+    if (request_type == BY_POPULARITY || request_type == BY_DATE) {
+        send_movie_list(client_socket, request_type, "",con);
+    }
 
-        char no[1024];
-        recv(client_socket, no, 1024, 0);
-        int movie_id = atoi(no);
-        send_movie_details(client_socket, movie_id,con);
-        send_movie_poster(client_socket, movie_id);
+    // If we are searching by name then call send_movie_list() with name
+    else if (request_type == BY_NAME) {
 
-        char change[1024];
-        recv(client_socket, change, 1024, 0);
-        int change_rating = atoi(change);
+        // First Read the movie name
+        char buff[1024];
+        recv(client_socket, buff, 1024, 0);
+        string movie_name = buff;
 
-        if (change_rating == RATE_MOVIE){
-            char rating[1024];
-            recv(client_socket, rating, 1024, 0);
-            int new_rating = atoi(rating);
-            update_movie_rating(new_rating,movie_id,con);
-        }
+        // Send list of movie matching
+        send_movie_list(client_socket, request_type, movie_name,con);
+    } else {
+        cout << "Wrong Choice";
+    }
+
+    // Wait for the Movie Id client wants to know about.
+    char no[1024];
+    recv(client_socket, no, 1024, 0);
+    int movie_id = atoi(no);
+
+    // Send Details of that movie
+    send_movie_details(client_socket, movie_id,con);
+    // Send Poster of it.
+    send_movie_poster(client_socket, movie_id);
+
+    // Wait if we are getting rating or not.
+    char change[1024];
+    recv(client_socket, change, 1024, 0);
+    int change_rating = atoi(change);
+
+    if (change_rating == RATE_MOVIE){
+        // If client wants to rate, then wait for rating value.
+        char rating[1024];
+        recv(client_socket, rating, 1024, 0);
+        int new_rating = atoi(rating);
+
+        // Once we have rating update the movie in db
+        update_movie_rating(new_rating,movie_id,con);
+    }
 }
 
 int main() {
@@ -275,6 +315,7 @@ int main() {
     struct sockaddr_in my_address, client_address;
     int clinet_size = sizeof(client_address);
 
+    // Set up the server socket.
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
 
     my_address.sin_family = AF_INET;
@@ -283,24 +324,24 @@ int main() {
 
     bind(server_socket, (struct sockaddr *) &my_address, sizeof(my_address));
 
+    // Open one coommon connection to db.
     driver = get_driver_instance();
     con = driver->connect(DB_URL, DB_USER,DB_PASS);
 
     while (true) {
         listen(server_socket, 50);
 
+        // Once a client gets connected spawn a new thread.
         cout << "listening" << endl;
         if ((client_socket = accept(server_socket, (struct sockaddr *) &client_address,
                                     (socklen_t *) (&clinet_size))) < 0) {
             cout << "Error" << endl;
         }
 
-        //char* h = "Hello";
         cout << client_socket << endl;
         cout << "Starting Giving Data" << endl;
         pthread_t thread;
         pthread_create(&thread, NULL, communicate, (void *) &client_socket);
-//        communicate(client_socket);
     }
     return 0;
 }
