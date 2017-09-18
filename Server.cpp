@@ -33,6 +33,8 @@ sql::Connection *con;
 
 std::mutex mtx;
 
+// Will now make pool of connections.
+
 /**
  * This function servers the first 2 request.
  * It gives list of movie sorted based on type of request.
