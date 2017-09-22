@@ -29,49 +29,12 @@ using namespace sql;
 using namespace std;
 
 sql::Driver *driver;
-sql::Connection *con;
 
 std::mutex mtx;
+bool cout_comments = true;
 
-// Will now make pool of connections.
-
-/**
- * This function servers the first 2 request.
- * It gives list of movie sorted based on type of request.
- * @param type The request type: BY_POPULARITY or what.
- * @param movie_name This parameter will be only there for BY_MOVIE request type.
- *                   For others it will be empty string.
- * @param con The global connection object passed.
- * @return It returns pointer to result set. If no data found returns null.
- */
-sql::ResultSet* get_right_movie_list(int type,string movie_name,sql::Connection *con) {
-    sql::Statement *stmt;
-    sql::ResultSet *res;
-
-    if (con->isValid()) {
-
-        stmt = con->createStatement();
-        stmt->execute("USE moviedb");
-
-        if (type == BY_POPULARITY) {
-            res = stmt->executeQuery("Select id,title from movie");
-        } else if (type == BY_DATE){
-            res = stmt->executeQuery("Select id,title from movie order by release_date desc");
-        }
-        else if(type == BY_NAME){
-            string query = "select id,title from movie where title like \"%" + movie_name + "%\"";
-            res = stmt->executeQuery(query);
-        }
-        else{
-            return  NULL;
-        }
-        delete stmt;
-        return res;
-    } else {
-        delete  res;
-        delete stmt;
-        return NULL;
-    }
+sql::Connection* get_connection(){
+    return driver->connect(DB_URL, DB_USER, DB_PASS);
 }
 
 /**
@@ -82,31 +45,52 @@ sql::ResultSet* get_right_movie_list(int type,string movie_name,sql::Connection 
  * @param movie_name Name of movie. (what needed by get_right_movie_list())
  * @param con Database connection. (what needed by get_right_movie_list())
  */
-void send_movie_list(int client_socket, int type,string movie_name,sql::Connection *con) {
+void send_movie_list(int client_socket, int type, string movie_name, sql::Connection *con) {
+
+    int flag = 3;
+
+    sql::Statement *stmt;
     sql::ResultSet *res;
+    
+    stmt = con->createStatement();
+    stmt->execute("USE moviedb");
 
-    res = get_right_movie_list(type,movie_name,con);
-
+    if (type == BY_POPULARITY) {
+        res = stmt->executeQuery("Select id,title from movie");
+    } else if (type == BY_DATE) {
+        res = stmt->executeQuery("Select id,title from movie order by release_date desc");
+    } else if (type == BY_NAME) {
+        string query = "select id,title from movie where title like \"%" + movie_name + "%\"";
+        res = stmt->executeQuery(query);
+    } else {
+        cout << "Exception" << endl;
+    }
     while (res->next()) {
         ostringstream oss;
-        oss << res->getInt(1);
         string entry;
+        oss << res->getInt(1);
         entry.append(oss.str());
         entry.append("\t");
         entry.append(res->getString(2));
         entry.append("\n");
-
         char buff[1024];
         strcpy(buff, entry.c_str());
         send(client_socket, buff, 1024, 0);
-        cout << res->getInt(1) << "\t" << res->getString(2) << endl;
-
+        if (flag > 0) {
+            if (cout_comments)
+                cout << entry << endl;
+            flag--;
+        } else {
+            if (cout_comments)
+                cout << "..." << endl;
+        }
     }
-
+    res->close();
+    delete res;
+    stmt->close();
+    delete stmt;
     char end[1024] = "-1";
     send(client_socket, end, 1024, 0);
-
-    delete res;
 }
 
 /**
@@ -115,28 +99,22 @@ void send_movie_list(int client_socket, int type,string movie_name,sql::Connecti
  * @param id Id of movie in DB whose details are to be given.
  * @param con Database connection object used to get data from db.
  */
-void send_movie_details(int client_socket,int id,sql::Connection *con) {
+void send_movie_details(int client_socket, int id, sql::Connection *con) {
     sql::Statement *stmt;
     sql::ResultSet *res;
 
     if (con->isValid()) {
         ostringstream oss;
-
         stmt = con->createStatement();
         stmt->execute("USE moviedb");
-
         string query = "select id,title,release_date,overview,vote_average,popularity,"
                 "genre_ids from movie where id =";
         oss << id;
         query.append(oss.str());
-
         res = stmt->executeQuery(query);
-
         string col[] = {"Id", "Title", "Release Date", "Overview", "Vote_average", "Popularity",
                         "Genre Id"};
-
         while (res->next()) {
-
             string row;
             for (int i = 0; i < 7; i++) {
                 if (i == 0 || i == 6) {
@@ -207,49 +185,41 @@ void send_movie_poster(int client_socket, int movie_id) {
  * @param id Id of movie which client has rated.
  * @param con Databse connection variable used to connect to DB.
  */
-void update_movie_rating(int rating,int id,sql::Connection *con){
+void update_movie_rating(int rating, int id, sql::Connection *con) {
+    mtx.lock();
     sql::Statement *stmt;
     sql::ResultSet *res;
-
     if (con->isValid()) {
-
         stmt = con->createStatement();
         stmt->execute("USE moviedb");
-
         ostringstream oss;
         string query = "select vote_count,vote_average from movie where id =";
         oss << id;
         query.append(oss.str());
-
-        mtx.lock();
         res = stmt->executeQuery(query);
-
-        while(res->next()) {
+        while (res->next()) {
             int count;
             double current_rating;
-
             count = res->getInt(1);
             current_rating = res->getDouble(2);
-
             double sum = count * current_rating;
             count += 1;
-
             double new_rating = (sum + rating) / count;
-
             ostringstream count_oss, rating_oss;
             count_oss << count;
             rating_oss << new_rating;
             string update_query = "update movie set vote_count "
                                           "= " + count_oss.str() + ",vote_average=" + rating_oss.str() + " "
                                           "where id = " + oss.str();
-
             int update = stmt->executeUpdate(update_query);
-
+            cout<<"Update: "<<update<<endl;
+            stmt->close();
         }
-        mtx.unlock();
+        res->close();
     }
     delete res;
     delete stmt;
+    mtx.unlock();
 }
 
 /**
@@ -259,30 +229,38 @@ void update_movie_rating(int rating,int id,sql::Connection *con){
  *                           int pointer.
  */
 void *communicate(void *temp_client_socket) {
+    Connection* con = get_connection();
     int client_socket = *((int *) temp_client_socket);
+    free(temp_client_socket);
+    if (cout_comments)
+        cout << "Client In Thread!! socketid: " << client_socket << endl;
 
     // Wait for what type of request client wants to do.
     char type_c[1024];
-    recv(client_socket, type_c, 1024, 0);
+    int result = recv(client_socket, type_c, 1024, 0);
+    cout<<"Error: "<<errno<<endl;
     int request_type = atoi(type_c);
-
-    // If we want list go to send_movie_list() it give give right list
-    if (request_type == BY_POPULARITY || request_type == BY_DATE) {
-        send_movie_list(client_socket, request_type, "",con);
+    cout <<"No of received bytes: "<<result<<endl;
+    if (request_type == 0) {
+        result = recv(client_socket, type_c, 1024, 0);
+        request_type = atoi(type_c);
+        cout <<"No of received bytes: "<<result<<endl;
     }
-
-    // If we are searching by name then call send_movie_list() with name
+    // If we want list go to send_movie_list() it will give right list
+    if (request_type == BY_POPULARITY || request_type == BY_DATE) {
+        send_movie_list(client_socket, request_type, "", con);
+    }
+        // If we are searching by name then call send_movie_list() with name
     else if (request_type == BY_NAME) {
-
         // First Read the movie name
         char buff[1024];
         recv(client_socket, buff, 1024, 0);
         string movie_name = buff;
-
         // Send list of movie matching
-        send_movie_list(client_socket, request_type, movie_name,con);
+        send_movie_list(client_socket, request_type, movie_name, con);
     } else {
-        cout << "Wrong Choice";
+        if (cout_comments)
+            cout << "Wrong Choice";
     }
 
     // Wait for the Movie Id client wants to know about.
@@ -291,7 +269,8 @@ void *communicate(void *temp_client_socket) {
     int movie_id = atoi(no);
 
     // Send Details of that movie
-    send_movie_details(client_socket, movie_id,con);
+    send_movie_details(client_socket, movie_id, con);
+
     // Send Poster of it.
     send_movie_poster(client_socket, movie_id);
 
@@ -300,22 +279,21 @@ void *communicate(void *temp_client_socket) {
     recv(client_socket, change, 1024, 0);
     int change_rating = atoi(change);
 
-    if (change_rating == RATE_MOVIE){
+    if (change_rating == RATE_MOVIE) {
         // If client wants to rate, then wait for rating value.
         char rating[1024];
         recv(client_socket, rating, 1024, 0);
         int new_rating = atoi(rating);
 
         // Once we have rating update the movie in db
-        update_movie_rating(new_rating,movie_id,con);
+        update_movie_rating(new_rating, movie_id, con);
     }
 }
 
 int main() {
 
-    int server_socket, client_socket;
-    struct sockaddr_in my_address, client_address;
-    int clinet_size = sizeof(client_address);
+    int server_socket;
+    struct sockaddr_in my_address;
 
     // Set up the server socket.
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -323,27 +301,35 @@ int main() {
     my_address.sin_family = AF_INET;
     my_address.sin_addr.s_addr = INADDR_ANY;
     my_address.sin_port = htons(PORTNO);
+    int bind_result = -1;
+    do {
+        bind_result = bind(server_socket, (struct sockaddr *) &my_address, sizeof(my_address));
+        if (bind_result == -1)
+            cout << "Could not bind to port: " << PORTNO << endl;
+        cout << "Bind result(0->success,-1->failure): " << bind_result << endl;
+        sleep(1);
+    } while (bind_result == -1);
 
-    bind(server_socket, (struct sockaddr *) &my_address, sizeof(my_address));
-
-    // Open one coommon connection to db.
+    // Open one common connection to db.
     driver = get_driver_instance();
-    con = driver->connect(DB_URL, DB_USER,DB_PASS);
 
     while (true) {
         listen(server_socket, 50);
 
         // Once a client gets connected spawn a new thread.
-        cout << "listening" << endl;
-        if ((client_socket = accept(server_socket, (struct sockaddr *) &client_address,
+        struct sockaddr_in client_address;
+        int* new_client_socket=(int *) malloc(10* sizeof(int));
+        int clinet_size = sizeof(client_address);
+        if ((*new_client_socket = accept(server_socket, (struct sockaddr *) &client_address,
                                     (socklen_t *) (&clinet_size))) < 0) {
-            cout << "Error" << endl;
+            if (cout_comments)
+                cout << "Error while connecting socket" << endl;
         }
-
-        cout << client_socket << endl;
-        cout << "Starting Giving Data" << endl;
+//        int client_socket = new_client_socket;
+        if (cout_comments)
+            cout << "Client arrived!! socketid: " << *new_client_socket<< endl;
         pthread_t thread;
-        pthread_create(&thread, NULL, communicate, (void *) &client_socket);
+        pthread_create(&thread, NULL, communicate, (void *) new_client_socket);
+//        communicate(&client_socket);
     }
-    return 0;
 }

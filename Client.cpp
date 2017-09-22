@@ -34,17 +34,10 @@ void send_str_to_socket(int my_socket, string str) {
  * This function opens a image with the given path using opencv library and waits for a key to close the image. Path should be absolute path
  * @param abs_path it is the absolute path of image
  */
-void open_image(const char *abs_path) {
-    Mat image;
-    image = imread(abs_path, CV_LOAD_IMAGE_COLOR);      // Read the file
-    if (!image.data) {                                   // Check for invalid input
-        cout << "Could not open or find the image" << std::endl;
-        return;
-    }
-    cout << "Displaying Poster" << endl;
-    namedWindow("Display window", WINDOW_AUTOSIZE);     // Create a window for display.
-    imshow("Display window", image);                    // Show our image inside it.
-    waitKey(0);                                         // Wait for a keystroke in the window
+void open_image(string abs_path) {
+    string command = "shotwell ";
+    command.append(abs_path);
+    system(command.c_str());
 }
 
 /**
@@ -58,11 +51,11 @@ void get_movie_poster(int my_socket,int movie_id) {
     char buff[1024];
     ostringstream oss;
     oss<<"/tmp/"<<movie_id<<".jpg";
-    const char* path= oss.str().c_str();
+    string path=oss.str();
     fstream poster;
     poster.open(path, ios::out | ios::binary);
     int n;
-    sleep(2);
+//    sleep(2);
     while ((n=recv(my_socket, buff, 1024, 0)) > 0) {
         string s = buff;
         if (s.compare("-1") == 0) {
@@ -185,7 +178,7 @@ void ask_for_movie_rating(int my_socket){
  * @param my_socket id of the socket setup with server
  */
 void handle_movie_listing(int my_socket) {
-    sleep(1);
+//    sleep(1);
     receive_movie_list(my_socket);
     int movie_id=ask_for_movie_id(my_socket);
     receive_movie_detail(my_socket,movie_id);
@@ -215,7 +208,7 @@ int ask_request_type() {
  * @param my_socket id of the socket setup with server
  */
 void search_by_name(int my_socket) {
-    sleep(1);
+//    sleep(1);
     string movie_name;
     cout<<"Enter movie name: ";
     cin>>movie_name;
