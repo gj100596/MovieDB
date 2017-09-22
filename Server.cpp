@@ -45,13 +45,13 @@ sql::Connection* get_connection(){
  * @param movie_name Name of movie. (what needed by get_right_movie_list())
  * @param con Database connection. (what needed by get_right_movie_list())
  */
-void send_movie_list(int client_socket, int type, string movie_name, sql::Connection *con) {
-
+void send_movie_list(int client_socket, int type, string movie_name) {
+    sql::Connection *con = get_connection(); // get it from pool
     int flag = 3;
 
     sql::Statement *stmt;
     sql::ResultSet *res;
-    
+
     stmt = con->createStatement();
     stmt->execute("USE moviedb");
 
@@ -65,6 +65,8 @@ void send_movie_list(int client_socket, int type, string movie_name, sql::Connec
     } else {
         cout << "Exception" << endl;
     }
+
+
     while (res->next()) {
         ostringstream oss;
         string entry;
@@ -89,6 +91,8 @@ void send_movie_list(int client_socket, int type, string movie_name, sql::Connec
     delete res;
     stmt->close();
     delete stmt;
+    con->close();
+    delete con;
     char end[1024] = "-1";
     send(client_socket, end, 1024, 0);
 }
@@ -99,10 +103,10 @@ void send_movie_list(int client_socket, int type, string movie_name, sql::Connec
  * @param id Id of movie in DB whose details are to be given.
  * @param con Database connection object used to get data from db.
  */
-void send_movie_details(int client_socket, int id, sql::Connection *con) {
+void send_movie_details(int client_socket, int id) {
     sql::Statement *stmt;
     sql::ResultSet *res;
-
+    sql::Connection *con = get_connection(); // get it from pool
     if (con->isValid()) {
         ostringstream oss;
         stmt = con->createStatement();
@@ -148,8 +152,13 @@ void send_movie_details(int client_socket, int id, sql::Connection *con) {
         char end[1024] = "-1";
         send(client_socket, end, 1024, 0);
 
+        res->close();
         delete res;
+        stmt->close();
         delete stmt;
+        con->close();
+        delete con;
+
     }
 }
 
@@ -185,7 +194,9 @@ void send_movie_poster(int client_socket, int movie_id) {
  * @param id Id of movie which client has rated.
  * @param con Databse connection variable used to connect to DB.
  */
-void update_movie_rating(int rating, int id, sql::Connection *con) {
+void update_movie_rating(int rating, int id) {
+    sql::Connection *con = get_connection(); // get it from pool
+
     mtx.lock();
     sql::Statement *stmt;
     sql::ResultSet *res;
@@ -219,6 +230,8 @@ void update_movie_rating(int rating, int id, sql::Connection *con) {
     }
     delete res;
     delete stmt;
+    con->close();
+    delete con;
     mtx.unlock();
 }
 
@@ -229,7 +242,7 @@ void update_movie_rating(int rating, int id, sql::Connection *con) {
  *                           int pointer.
  */
 void *communicate(void *temp_client_socket) {
-    Connection* con = get_connection();
+//    Connection* con = get_connection();
     int client_socket = *((int *) temp_client_socket);
     free(temp_client_socket);
     if (cout_comments)
@@ -248,7 +261,7 @@ void *communicate(void *temp_client_socket) {
     }
     // If we want list go to send_movie_list() it will give right list
     if (request_type == BY_POPULARITY || request_type == BY_DATE) {
-        send_movie_list(client_socket, request_type, "", con);
+        send_movie_list(client_socket, request_type, "");
     }
         // If we are searching by name then call send_movie_list() with name
     else if (request_type == BY_NAME) {
@@ -257,7 +270,7 @@ void *communicate(void *temp_client_socket) {
         recv(client_socket, buff, 1024, 0);
         string movie_name = buff;
         // Send list of movie matching
-        send_movie_list(client_socket, request_type, movie_name, con);
+        send_movie_list(client_socket, request_type, movie_name);
     } else {
         if (cout_comments)
             cout << "Wrong Choice";
@@ -269,7 +282,7 @@ void *communicate(void *temp_client_socket) {
     int movie_id = atoi(no);
 
     // Send Details of that movie
-    send_movie_details(client_socket, movie_id, con);
+    send_movie_details(client_socket, movie_id);
 
     // Send Poster of it.
     send_movie_poster(client_socket, movie_id);
@@ -286,7 +299,7 @@ void *communicate(void *temp_client_socket) {
         int new_rating = atoi(rating);
 
         // Once we have rating update the movie in db
-        update_movie_rating(new_rating, movie_id, con);
+        update_movie_rating(new_rating, movie_id);
     }
 }
 
