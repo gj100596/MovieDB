@@ -25,13 +25,14 @@
 #define DB_USER "root"
 #define DB_PASS "0882"
 
+bool DEBUG = false;
+
 using namespace sql;
 using namespace std;
 
 sql::Driver *driver;
 
 std::mutex mtx;
-bool cout_comments = true;
 
 sql::Connection* get_connection(){
     return driver->connect(DB_URL, DB_USER, DB_PASS);
@@ -78,13 +79,15 @@ void send_movie_list(int client_socket, int type, string movie_name) {
         char buff[1024];
         strcpy(buff, entry.c_str());
         send(client_socket, buff, 1024, 0);
-        if (flag > 0) {
-            if (cout_comments)
-                cout << entry << endl;
-            flag--;
-        } else {
-            if (cout_comments)
-                cout << "..." << endl;
+        if (DEBUG) {
+            if (flag > 0) {
+                if (DEBUG)
+                    cout << entry << endl;
+                flag--;
+            } else {
+                if (DEBUG)
+                    cout << "..." << endl;
+            }
         }
     }
     res->close();
@@ -146,7 +149,8 @@ void send_movie_details(int client_socket, int id) {
             char buff[1024];
             strcpy(buff, row.c_str());
             send(client_socket, buff, 1024, 0);
-            cout << buff << endl;
+            if(DEBUG)
+                cout << buff << endl;
         }
 
         char end[1024] = "-1";
@@ -223,7 +227,8 @@ void update_movie_rating(int rating, int id) {
                                           "= " + count_oss.str() + ",vote_average=" + rating_oss.str() + " "
                                           "where id = " + oss.str();
             int update = stmt->executeUpdate(update_query);
-            cout<<"Update: "<<update<<endl;
+            if (DEBUG)
+                cout<<"Update: "<<update<<endl;
             stmt->close();
         }
         res->close();
@@ -245,19 +250,19 @@ void *communicate(void *temp_client_socket) {
 //    Connection* con = get_connection();
     int client_socket = *((int *) temp_client_socket);
     free(temp_client_socket);
-    if (cout_comments)
+    if (DEBUG)
         cout << "Client In Thread!! socketid: " << client_socket << endl;
 
     // Wait for what type of request client wants to do.
     char type_c[1024];
     int result = recv(client_socket, type_c, 1024, 0);
-    cout<<"Error: "<<errno<<endl;
+//    cout<<"Error: "<<errno<<endl;
     int request_type = atoi(type_c);
-    cout <<"No of received bytes: "<<result<<endl;
+//    cout <<"No of received bytes: "<<result<<endl;
     if (request_type == 0) {
         result = recv(client_socket, type_c, 1024, 0);
         request_type = atoi(type_c);
-        cout <<"No of received bytes: "<<result<<endl;
+//        cout <<"No of received bytes: "<<result<<endl;
     }
     // If we want list go to send_movie_list() it will give right list
     if (request_type == BY_POPULARITY || request_type == BY_DATE) {
@@ -272,7 +277,7 @@ void *communicate(void *temp_client_socket) {
         // Send list of movie matching
         send_movie_list(client_socket, request_type, movie_name);
     } else {
-        if (cout_comments)
+        if (DEBUG)
             cout << "Wrong Choice";
     }
 
@@ -318,8 +323,10 @@ int main() {
     do {
         bind_result = bind(server_socket, (struct sockaddr *) &my_address, sizeof(my_address));
         if (bind_result == -1)
-            cout << "Could not bind to port: " << PORTNO << endl;
-        cout << "Bind result(0->success,-1->failure): " << bind_result << endl;
+            if (DEBUG)
+                cout << "Could not bind to port: " << PORTNO << endl;
+        if(DEBUG)
+            cout << "Bind result(0->success,-1->failure): " << bind_result << endl;
         sleep(1);
     } while (bind_result == -1);
 
@@ -335,11 +342,11 @@ int main() {
         int clinet_size = sizeof(client_address);
         if ((*new_client_socket = accept(server_socket, (struct sockaddr *) &client_address,
                                     (socklen_t *) (&clinet_size))) < 0) {
-            if (cout_comments)
+            if (DEBUG)
                 cout << "Error while connecting socket" << endl;
         }
 //        int client_socket = new_client_socket;
-        if (cout_comments)
+        if (DEBUG)
             cout << "Client arrived!! socketid: " << *new_client_socket<< endl;
         pthread_t thread;
         pthread_create(&thread, NULL, communicate, (void *) new_client_socket);

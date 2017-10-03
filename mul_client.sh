@@ -1,3 +1,3 @@
-for((i=0;i<200;i++)){
-echo "1 20 n y 10 " | ./client
+for((i=0;i<250;i++)){
+echo "1 $(( $RANDOM % 20 )) n n" | ./client
 }

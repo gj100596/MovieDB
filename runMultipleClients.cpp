@@ -12,9 +12,12 @@ void * runCommand(void * nc){
 }
 
 int main(){
-    int no_of_clients=20;
+    int no_of_clients=200;
     pthread_t thread[no_of_clients];
     for (int i = 0; i < no_of_clients; ++i) {
         pthread_create(&thread[i], NULL, runCommand, (void *) no_of_clients);
+    }
+    for (int i = 0; i < no_of_clients; ++i) {
+        pthread_join(thread[i],NULL);
     }
 }
