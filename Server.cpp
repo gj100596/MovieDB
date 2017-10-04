@@ -289,8 +289,13 @@ void *communicate(void *temp_client_socket) {
     // Send Details of that movie
     send_movie_details(client_socket, movie_id);
 
-    // Send Poster of it.
-    send_movie_poster(client_socket, movie_id);
+    char poster[1024];
+    recv(client_socket, poster, 1024, 0);
+    int show_poster = atoi(poster);
+    if (show_poster == 1) {
+        // Send Poster of it.
+        send_movie_poster(client_socket, movie_id);
+    }
 
     // Wait if we are getting rating or not.
     char change[1024];
