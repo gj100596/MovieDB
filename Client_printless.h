@@ -39,7 +39,7 @@ void send_str_to_socket(int my_socket, string str) {
 void open_image(string abs_path) {
     string command = "shotwell ";
     command.append(abs_path);
-    system(command.c_str());
+//    system(command.c_str());
 }
 
 /**
