@@ -10,7 +10,7 @@ using namespace std;
 
 extern int client_printless(int,int,char,char);
 //const int no_of_clients = 100;
-const int no_of_req_per_client=10;
+const int no_of_req_per_client=20;
 float *rtime;
 
 void * runCommand(void * id){
@@ -19,7 +19,7 @@ void * runCommand(void * id){
     for(int i=0;i<no_of_req_per_client;i++) {
         int m = rand() % 10 + 1;
         clock_t begin = clock();
-        client_printless(1,m,'n','n');
+        client_printless(1,m,'y','n',iid,i);
         clock_t end = clock();
         float time = float(end - begin) / CLOCKS_PER_SEC;
         time_of_thread += time;
@@ -50,10 +50,10 @@ float do_work(int no_of_clients){
 
 
 int main(){
-    int client_arry[] = {10,20,50,100,150,200,250,300,400,500,750,1000};
-    for (int i=0;i<12;i++){
+    int client_arry[] = {250,20,50,100,150,200,250,300,400,500,750,1000};
+    for (int i=0;i<1;i++){
         rtime = new float[client_arry[i]];
-        cout << client_arry[i] <<".... time .... " << do_work(client_arry[i])<<endl;
+        cout << client_arry[i] <<".... time ...." << do_work(client_arry[i])<<endl;
     }
 
 
