@@ -160,10 +160,11 @@ void send_movie_details(int client_socket, int id) {
         delete res;
         stmt->close();
         delete stmt;
-        con->close();
-        delete con;
 
     }
+    con->close();
+    delete con;
+
 }
 
 /**
@@ -328,9 +329,9 @@ int main() {
     do {
         bind_result = bind(server_socket, (struct sockaddr *) &my_address, sizeof(my_address));
         if (bind_result == -1)
-            if (DEBUG)
+//            if (DEBUG)
                 cout << "Could not bind to port: " << PORTNO << endl;
-        if(DEBUG)
+//        if(DEBUG)
             cout << "Bind result(0->success,-1->failure): " << bind_result << endl;
         sleep(1);
     } while (bind_result == -1);
