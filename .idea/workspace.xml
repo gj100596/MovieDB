@@ -14,8 +14,11 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2e2cea00-ed5b-4632-8874-4c8134034f19" name="Default" comment="">
+    <list default="true" id="2e2cea00-ed5b-4632-8874-4c8134034f19" name="Default" comment="Running Multiple client: Sequentially (using Shell) and parallely(using Thread)&#10;Results: Seq no problem&#10;Parallel: Read no problem&#10;Write not possible for more than 150 connections.">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Client_printless.h" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Server.cpp" afterPath="$PROJECT_DIR$/Server.cpp" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/runMultipleClients.cpp" afterPath="$PROJECT_DIR$/runMultipleClients.cpp" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -30,8 +33,8 @@
       <file leaf-file-name="Server.cpp" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Server.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="18">
-              <caret line="28" column="0" lean-forward="true" selection-start-line="28" selection-start-column="0" selection-end-line="28" selection-end-column="0" />
+            <state relative-caret-position="828">
+              <caret line="58" column="24" lean-forward="false" selection-start-line="58" selection-start-column="24" selection-end-line="58" selection-end-column="24" />
               <folding />
             </state>
           </provider>
@@ -155,8 +158,8 @@
         <option value="$PROJECT_DIR$/Client_printless.cpp" />
         <option value="$PROJECT_DIR$/Client.cpp" />
         <option value="$PROJECT_DIR$/Client_printless.h" />
-        <option value="$PROJECT_DIR$/runMultipleClients.cpp" />
         <option value="$PROJECT_DIR$/Server.cpp" />
+        <option value="$PROJECT_DIR$/runMultipleClients.cpp" />
       </list>
     </option>
   </component>
@@ -283,7 +286,7 @@
       <workItem from="1505944800558" duration="11232000" />
       <workItem from="1507094624850" duration="3623000" />
       <workItem from="1507235884005" duration="819000" />
-      <workItem from="1507239132807" duration="3444000" />
+      <workItem from="1507239132807" duration="3165000" />
     </task>
     <task id="LOCAL-00001" summary="Movie List Transfer Via Socket.">
       <created>1502785453906</created>
@@ -432,18 +435,11 @@
       <option name="project" value="LOCAL" />
       <updated>1507058082188</updated>
     </task>
-    <task id="LOCAL-00022" summary="Some updates">
-      <created>1507248101498</created>
-      <option name="number" value="00022" />
-      <option name="presentableId" value="LOCAL-00022" />
-      <option name="project" value="LOCAL" />
-      <updated>1507248101499</updated>
-    </task>
-    <option name="localTasksCounter" value="23" />
+    <option name="localTasksCounter" value="22" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="103732000" />
+    <option name="totallyTimeSpent" value="103453000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="65" y="24" width="1305" height="780" extended-state="6" />
@@ -525,8 +521,7 @@
     <MESSAGE value="Phase 1 Issue Solved" />
     <MESSAGE value="Phase 2 Start" />
     <MESSAGE value="Running Multiple client: Sequentially (using Shell) and parallely(using Thread)&#10;Results: Seq no problem&#10;Parallel: Read no problem&#10;Write not possible for more than 150 connections." />
-    <MESSAGE value="Some updates" />
-    <option name="LAST_COMMIT_MESSAGE" value="Some updates" />
+    <option name="LAST_COMMIT_MESSAGE" value="Running Multiple client: Sequentially (using Shell) and parallely(using Thread)&#10;Results: Seq no problem&#10;Parallel: Read no problem&#10;Write not possible for more than 150 connections." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -1103,8 +1098,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Server.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="18">
-          <caret line="28" column="0" lean-forward="true" selection-start-line="28" selection-start-column="0" selection-end-line="28" selection-end-column="0" />
+        <state relative-caret-position="828">
+          <caret line="58" column="24" lean-forward="false" selection-start-line="58" selection-start-column="24" selection-end-line="58" selection-end-column="24" />
           <folding />
         </state>
       </provider>
