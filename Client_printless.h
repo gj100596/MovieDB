@@ -242,7 +242,7 @@ int client_printless(int a,int b,char c, char d,int iid, int i) {
     server_address.sin_port = htons(PORTNO);
     inet_aton(ipaddress.c_str(), &server_address.sin_addr);
     connect(my_socket, (sockaddr *) &server_address, sizeof(server_address));
-    cout<<"Client id: "<<iid<<" req_no: "<<i<<" socket_id: "<<my_socket<<endl;
+//    cout<<"Client id: "<<iid<<" req_no: "<<i<<" socket_id: "<<my_socket<<endl;
     //Ask for request type (All type of Search)
     int request_type = ask_request_type();
     ostringstream oss;
