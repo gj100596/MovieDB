@@ -10,7 +10,6 @@
 #define LIST_BY_RELEASE_DATE 2
 #define SEARCH_BY_NAME 3
 #define RATE_MOVIE 4
-#define PORTNO 8090
 
 using namespace cv;
 using namespace std;
@@ -19,7 +18,7 @@ int a,b;
 char c,d;
 //IP Address of Movie server
 string ipaddress ="127.0.0.1";
-//string ipaddress ="10.16.23.85";
+//string ipaddress ="10.130.4.192";
 
 /**
  * This function sends string data to the socket in the bunch of 1024 bytes
@@ -230,11 +229,14 @@ void search_by_name(int my_socket) {
  * Main functions. Ask user for action and perform accordingly
  * @return success of a program
  */
-int client_printless(int a,int b,char c, char d,int iid, int i) {
+std::mutex mtxx;
+int client_printless(int a,int b,char c, char d,int iid, int i,int PORTNO) {
+    mtxx.lock();
     ::a = a;
     ::b = b;
     ::c = c;
     ::d = d;
+    mtxx.unlock();
     int my_socket;
     struct sockaddr_in server_address;
     my_socket = socket(AF_INET, SOCK_STREAM, 0);
