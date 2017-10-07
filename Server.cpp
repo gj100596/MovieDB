@@ -11,9 +11,8 @@
 #include "mysql_connection.h"
 #include "cppconn/statement.h"
 #include <mutex>
-#include <fcntl.h>
 
-
+#define PORTNO 8090
 
 // Different IDs for request types
 #define BY_POPULARITY 1
@@ -27,43 +26,24 @@
 #define DB_PASS "0882"
 
 bool DEBUG = true;
-int last = 0;
+
 using namespace sql;
 using namespace std;
-int PORTNO = 8090;
 
 sql::Driver *driver;
-int conCount = 0;
-std::mutex mtx;
-std::mutex conmtx;
-ofstream log_file;
-std::mutex last_mtx;
 
-sql::Connection *get_connection(int client_socket) {
-    sql::Connection *con;
-    conmtx.lock();
+std::mutex mtx;
+int con_count = 0;
+sql::Connection *get_connection() {
+    sql::Connection *con ;
+    mtx.lock();
+    cout << "Connection "<<con_count++;
     try {
-        mtx.lock();
-        conCount++;
-        cout << "Socket: " << client_socket << " Connections: " << conCount << endl;
-        log_file << "Socket: " << client_socket << " Connections: " << conCount << endl;
-        log_file.flush();
-        mtx.unlock();
-        con = driver->connect(DB_URL, DB_USER, DB_PASS);
-        mtx.lock();
-        cout << "Socket: " << client_socket << " Connected!" << endl;
-        log_file << "Socket: " << client_socket << " Connected!" << endl;
-        log_file.flush();
-        mtx.unlock();
-    } catch (...) {
-        mtx.lock();
-        cout << "Exception " << endl;
-        log_file << "Exception " << endl;
-        log_file.flush();
-        mtx.unlock();
-        exit(0);
+        con= driver->connect(DB_URL, DB_USER, DB_PASS);
+    }catch(...){
+        con= driver->connect(DB_URL, DB_USER, DB_PASS);
     }
-    conmtx.unlock();
+    mtx.unlock();
     return con;
 }
 
@@ -76,16 +56,12 @@ sql::Connection *get_connection(int client_socket) {
  * @param con Database connection. (what needed by get_right_movie_list())
  */
 void send_movie_list(int client_socket, int type, string movie_name) {
-    sql::Connection *con = get_connection(client_socket); // get it from pool
+    sql::Connection *con = get_connection(); // get it from pool
     int flag = 3;
 
     sql::Statement *stmt;
     sql::ResultSet *res;
-    mtx.lock();
-    cout << "Movie List START socket: " << client_socket << endl;
-    log_file << "Movie List START socket: " << client_socket << endl;
-    log_file.flush();
-    mtx.unlock();
+    cout<<"Movie List START; socket: "<<client_socket<<endl;
     if (con->isValid()) {
 
         stmt = con->createStatement();
@@ -134,11 +110,7 @@ void send_movie_list(int client_socket, int type, string movie_name) {
     }
     char end[1024] = "-1";
     send(client_socket, end, 1024, 0);
-    mtx.lock();
-    cout << "Movie List END socket: " << client_socket << endl;
-    log_file << "Movie List END socket: " << client_socket << endl;
-    log_file.flush();
-    mtx.unlock();
+    cout<<"Movie List END; socket: "<<client_socket<<endl;
 
 }
 
@@ -151,12 +123,8 @@ void send_movie_list(int client_socket, int type, string movie_name) {
 void send_movie_details(int client_socket, int id) {
     sql::Statement *stmt;
     sql::ResultSet *res;
-    sql::Connection *con = get_connection(client_socket); // get it from pool
-    mtx.lock();
-    cout << "Movie details START socket: " << client_socket << endl;
-    log_file << "Movie details START socket: " << client_socket << endl;
-    log_file.flush();
-    mtx.unlock();
+    sql::Connection *con = get_connection(); // get it from pool
+    cout<<"Movie details START; socket: "<<client_socket<<endl;
     if (con->isValid()) {
         ostringstream oss;
         stmt = con->createStatement();
@@ -209,11 +177,7 @@ void send_movie_details(int client_socket, int id) {
         con->close();
         delete con;
     }
-    mtx.lock();
-    cout << "Movie details END socket: " << client_socket << endl;
-    log_file << "Movie details END socket: " << client_socket << endl;
-    log_file.flush();
-    mtx.unlock();
+    cout<<"Movie details END; socket: "<<client_socket<<endl;
 }
 
 /**
@@ -248,8 +212,8 @@ void send_movie_poster(int client_socket, int movie_id) {
  * @param id Id of movie which client has rated.
  * @param con Databse connection variable used to connect to DB.
  */
-void update_movie_rating(int rating, int id, int client_socket) {
-    sql::Connection *con = get_connection(client_socket); // get it from pool
+void update_movie_rating(int rating, int id) {
+    sql::Connection *con = get_connection(); // get it from pool
 
     mtx.lock();
     sql::Statement *stmt;
@@ -277,9 +241,8 @@ void update_movie_rating(int rating, int id, int client_socket) {
                                           "= " + count_oss.str() + ",vote_average=" + rating_oss.str() + " "
                                           "where id = " + oss.str();
             int update = stmt->executeUpdate(update_query);
-            if (DEBUG) {
+            if (DEBUG)
                 cout << "Update: " << update << endl;
-            }
             stmt->close();
         }
         res->close();
@@ -298,28 +261,18 @@ void update_movie_rating(int rating, int id, int client_socket) {
  *                           int pointer.
  */
 void *communicate(void *temp_client_socket) {
-//    Connection* con = get_connection(client_socket);
+//    Connection* con = get_connection();
     int client_socket = *((int *) temp_client_socket);
-    int* client_socket_int = (int *)temp_client_socket;
-    free(client_socket_int);
+    free(temp_client_socket);
     try {
-        if (DEBUG) {
-            mtx.lock();
+        if (DEBUG)
             cout << "Request In Thread!! socket: " << client_socket << endl;
-            log_file << "Request In Thread!! socket: " << client_socket << endl;
-            log_file.flush();
-            mtx.unlock();
-        }
+
         // Wait for what type of request client wants to do.
         char type_c[1024];
         int result = recv(client_socket, type_c, 1024, 0);
-        if (DEBUG) {
-            mtx.lock();
-            cout << "First recv socket: " << client_socket << endl;
-            log_file << "First recv socket: " << client_socket << endl;
-            log_file.flush();
-            mtx.unlock();
-        }
+        if (DEBUG)
+            cout << "First recv; socket: " << client_socket << endl;
 //    cout<<"Error: "<<errno<<endl;
         int request_type = atoi(type_c);
 //    cout <<"No of received bytes: "<<result<<endl;
@@ -341,34 +294,24 @@ void *communicate(void *temp_client_socket) {
             // Send list of movie matching
             send_movie_list(client_socket, request_type, movie_name);
         } else {
-            if (DEBUG) {
+            if (DEBUG)
                 cout << "Wrong Choice";
-            }
         }
 
         // Wait for the Movie Id client wants to know about.
         char no[1024];
         recv(client_socket, no, 1024, 0);
         int movie_id = atoi(no);
-        if (DEBUG) {
-            mtx.lock();
-            cout << "Second recv socket: " << client_socket << " Movie id: " << movie_id << endl;
-            log_file << "Second recv socket: " << client_socket << " Movie id: " << movie_id << endl;
-            log_file.flush();
-            mtx.unlock();
-        }
+        if (DEBUG)
+            cout << "Second recv; socket: " << client_socket << " Movie id: " << movie_id << endl;
+
         // Send Details of that movie
         send_movie_details(client_socket, movie_id);
 
         char poster[1024];
         recv(client_socket, poster, 1024, 0);
-        if (DEBUG) {
-            mtx.lock();
-            cout << "Third recv socket: " << client_socket << endl;
-            log_file << "Third recv socket: " << client_socket << endl;
-            log_file.flush();
-            mtx.unlock();
-        }
+        if (DEBUG)
+            cout << "Third recv; socket: " << client_socket << endl;
 
         int show_poster = atoi(poster);
         if (show_poster == 1) {
@@ -379,13 +322,9 @@ void *communicate(void *temp_client_socket) {
         // Wait if we are getting rating or not.
         char change[1024];
         recv(client_socket, change, 1024, 0);
-        if (DEBUG) {
-            mtx.lock();
-            cout << "Fourth recv socket: " << client_socket << endl;
-            log_file << "Fourth recv socket: " << client_socket << endl;
-            log_file.flush();
-            mtx.unlock();
-        }
+        if (DEBUG)
+            cout << "Fourth recv; socket: " << client_socket << endl;
+
         int change_rating = atoi(change);
 
         if (change_rating == RATE_MOVIE) {
@@ -395,39 +334,107 @@ void *communicate(void *temp_client_socket) {
             int new_rating = atoi(rating);
 
             // Once we have rating update the movie in db
-            update_movie_rating(new_rating, movie_id, client_socket);
+            update_movie_rating(new_rating, movie_id);
         }
     } catch (std::exception &e) {
-        mtx.lock();
         cout << "Exception in socket: " << client_socket << endl;
         cout << "Exception: " << e.what() << endl;
-        log_file << "Exception in socket: " << client_socket << endl;
-        log_file << "Exception: " << e.what() << endl;
-        log_file.flush();
-        mtx.unlock();
         exit(0);
     }
     close(client_socket);
-    mtx.lock();
     cout << "Closed socket: " << client_socket << endl;
-    log_file << "Closed socket: " << client_socket << endl;
-    log_file.flush();
-    mtx.unlock();
-    last_mtx.lock();
-    last--;
-    if (last == 0) {
-        log_file.close();
+    pthread_exit(NULL);
+}
+
+void *automate_communicate(void *temp_client_socket) {
+//    Connection* con = get_connection();
+    int client_socket = *((int *) temp_client_socket);
+    free(temp_client_socket);
+    try {
+//        if (DEBUG)
+        cout << "Request In Thread!! socket: " << client_socket << endl;
+
+        // Wait for what type of request client wants to do.
+        char type_c[1024];
+        int result;// = recv(client_socket, type_c, 1024, 0);
+        if (DEBUG)
+            cout << "First recv; socket: " << client_socket << endl;
+//    cout<<"Error: "<<errno<<endl;
+        int request_type = 1;//atoi(type_c);
+//    cout <<"No of received bytes: "<<result<<endl;
+        if (request_type == 0) {
+            result = recv(client_socket, type_c, 1024, 0);
+            request_type = atoi(type_c);
+//        cout <<"No of received bytes: "<<result<<endl;
+        }
+        // If we want list go to send_movie_list() it will give right list
+        if (request_type == BY_POPULARITY || request_type == BY_DATE) {
+            send_movie_list(client_socket, request_type, "");
+        }
+            // If we are searching by name then call send_movie_list() with name
+        else if (request_type == BY_NAME) {
+            // First Read the movie name
+            char buff[1024];
+            recv(client_socket, buff, 1024, 0);
+            string movie_name = buff;
+            // Send list of movie matching
+            send_movie_list(client_socket, request_type, movie_name);
+        } else {
+            if (DEBUG)
+                cout << "Wrong Choice";
+        }
+
+        // Wait for the Movie Id client wants to know about.
+        char no[1024];
+//        recv(client_socket, no, 1024, 0);
+//        int movie_id = atoi(no);
+        int movie_id = rand() % 20 + 1;
+        if (DEBUG)
+            cout << "Second recv; socket: " << client_socket << " Movie id: " << movie_id << endl;
+
+        // Send Details of that movie
+        send_movie_details(client_socket, movie_id);
+
+        char poster[1024];
+//        recv(client_socket, poster, 1024, 0);
+        if (DEBUG)
+            cout << "Third recv; socket: " << client_socket << endl;
+
+        int show_poster = 1;//atoi(poster);
+        if (show_poster == 1) {
+            // Send Poster of it.
+            send_movie_poster(client_socket, movie_id);
+        }
+
+        // Wait if we are getting rating or not.
+        char change[1024];
+//        recv(client_socket, change, 1024, 0);
+        if (DEBUG)
+            cout << "Fourth recv; socket: " << client_socket << endl;
+
+        int change_rating = -1;//atoi(change);
+
+        if (change_rating == RATE_MOVIE) {
+            // If client wants to rate, then wait for rating value.
+            char rating[1024];
+            recv(client_socket, rating, 1024, 0);
+            int new_rating = atoi(rating);
+
+            // Once we have rating update the movie in db
+            update_movie_rating(new_rating, movie_id);
+        }
+    } catch (std::exception &e) {
+        cout << "Exception in socket: " << client_socket << endl;
+        cout << "Exception: " << e.what() << endl;
+        exit(0);
     }
-    last_mtx.unlock();
-    pthread_exit(0);
+    close(client_socket);
+    cout << "Closed socket: " << client_socket << endl;
+    pthread_exit(NULL);
 }
 
 int main() {
-    cout << "Enter Portno: ";
-    cin >> PORTNO;
-    if (PORTNO == 0) {
-        PORTNO = 8090;
-    }
+
     int server_socket;
     struct sockaddr_in my_address;
 
@@ -451,8 +458,9 @@ int main() {
     // Open one common connection to db.
     driver = get_driver_instance();
     listen(server_socket, 50);
-    int count_client=0;
+    int client_count = 0;
     while (true) {
+
         // Once a client gets connected spawn a new thread.
         struct sockaddr_in client_address;
         int *new_client_socket = (int *) malloc(1 * sizeof(int));
@@ -464,24 +472,11 @@ int main() {
         }
 //        int client_socket = new_client_socket;
 //        if (DEBUG)
-        last_mtx.lock();
-        last++;
-        if (last == 1) {
-            log_file.open("/home/hail-drago/CLionProjects/moviedb/log.csv", ios::app);
-        }
-        last_mtx.unlock();
-        count_client++;
-//        pthread_t *thread = (pthread_t *)malloc(sizeof(pthread_t));
+        cout << "Client "<<client_count++ <<" arrived!! socketid: " << *new_client_socket << endl;
         pthread_t thread;
-        mtx.lock();
-        cout <<"Client arrived!! socketid: " << *new_client_socket <<" Thread& : "<<(thread)<< endl;
-        cout<<"Client Count: "<<count_client<<endl;
-        log_file<<"Client arrived!! socketid: " << *new_client_socket <<" Thread& : "<<(thread)<< endl;
-        log_file<<"Client Count: "<<count_client<<endl;
-        log_file.flush();
-        mtx.unlock();
         pthread_create(&thread, NULL, communicate, (void *) new_client_socket);
         pthread_detach(thread);
+
 //        communicate(&client_socket);
     }
 }

@@ -3,6 +3,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <fstream>
+#include <mutex>
 #include "iostream"
 #include "arpa/inet.h"
 
@@ -17,8 +18,8 @@ using namespace std;
 int a,b;
 char c,d;
 //IP Address of Movie server
-string ipaddress ="127.0.0.1";
-//string ipaddress ="10.130.4.192";
+//string ipaddress ="127.0.0.1";
+string ipaddress ="10.130.4.192";
 
 /**
  * This function sends string data to the socket in the bunch of 1024 bytes
