@@ -47,6 +47,13 @@ sql::Connection *get_connection() {
     return con;
 }
 
+void send_str_to_socket(int my_socket, string str) {
+    int buff_size = 16;
+    for (int i=0;i<str.length();i+=buff_size){
+        send(my_socket, str.substr(i,buff_size).c_str(), buff_size, 0);
+    }
+}
+
 /**
  * The methods call get_right_movie_list() to get list of all movies.
  * And then pass those records over socket
@@ -86,9 +93,10 @@ void send_movie_list(int client_socket, int type, string movie_name) {
             entry.append("\t");
             entry.append(res->getString(2));
             entry.append("\n");
-            char buff[1024];
-            strcpy(buff, entry.c_str());
-            send(client_socket, buff, 1024, 0);
+//            char buff[1024];
+//            strcpy(buff, entry.c_str());
+            send_str_to_socket(client_socket,entry);
+//            send(client_socket, buff, 1024, 0);
 //        if (DEBUG) {
 //            if (flag > 0) {
 //                if (DEBUG)
@@ -108,8 +116,9 @@ void send_movie_list(int client_socket, int type, string movie_name) {
         con->close();
         delete con;
     }
-    char end[1024] = "-1";
-    send(client_socket, end, 1024, 0);
+//    char end[1024] = "-1";
+//    send(client_socket, end, 1024, 0);
+    send_str_to_socket(client_socket,"-1");
     cout<<"Movie List END; socket: "<<client_socket<<endl;
 
 }
@@ -161,15 +170,17 @@ void send_movie_details(int client_socket, int id) {
                 }
             }
 
-            char buff[1024];
-            strcpy(buff, row.c_str());
-            send(client_socket, buff, 1024, 0);
+//            char buff[1024];
+//            strcpy(buff, row.c_str());
+//            send(client_socket, buff, 1024, 0);
+            send_str_to_socket(client_socket,row);
 //            if(DEBUG)
 //                cout << buff << endl;
         }
 
-        char end[1024] = "-1";
-        send(client_socket, end, 1024, 0);
+//        char end[1024] = "-1";
+//        send(client_socket, end, 1024, 0);
+        send_str_to_socket(client_socket,"-1");
         res->close();
         delete res;
         stmt->close();
@@ -193,14 +204,14 @@ void send_movie_poster(int client_socket, int movie_id) {
     string path = "../images/" + os.str() + ".jpg";
     ifstream poster(path, ios::binary);
 
-    char buffer[1024];
+    char buffer[16];
 
-    while (poster.read(buffer, 1024) || poster.gcount() != 0)
-        send(client_socket, buffer, 1024, 0);
+    while (poster.read(buffer, 16) || poster.gcount() != 0)
+        send(client_socket, buffer, 16, 0);
 
-    char end[1024] = "-1";
-    send(client_socket, end, 1024, 0);
-
+//    char end[1024] = "-1";
+//    send(client_socket, end, 1024, 0);
+    send_str_to_socket(client_socket,"-1");
     poster.close();
 
 }
