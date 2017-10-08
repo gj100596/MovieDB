@@ -16,8 +16,8 @@ using namespace cv;
 using namespace std;
 
 //IP Address of Movie server
-string ipaddress ="127.0.0.1";
-//string ipaddress ="10.16.23.85";
+//string ipaddress ="127.0.0.1";
+string ipaddress ="10.130.4.192";
 
 /**
  * This function sends string data to the socket in the bunch of 1024 bytes

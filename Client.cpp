@@ -1,8 +1,9 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <netinet/in.h>
-#include <unistd.h>
+#include <pthread.h>
 #include <fstream>
+#include <zconf.h>
 #include "iostream"
 #include "arpa/inet.h"
 
@@ -16,8 +17,8 @@ using namespace cv;
 using namespace std;
 
 //IP Address of Movie server
-string ipaddress ="127.0.0.1";
-//string ipaddress ="10.16.23.85";
+//string ipaddress ="127.0.0.1";
+string ipaddress ="192.168.137.161";
 
 /**
  * This function sends string data to the socket in the bunch of 1024 bytes
@@ -55,10 +56,10 @@ void get_movie_poster(int my_socket,int movie_id) {
     fstream poster;
     poster.open(path, ios::out | ios::binary);
     int n;
-//    sleep(2);
+    sleep(1);
     while ((n=recv(my_socket, buff, 1024, 0)) > 0) {
         string s = buff;
-        if (s.compare("-1") == 0) {
+        if (s.compare("-1") == 0) {     //buff[0] == '-' && buff[1] == '1'){//
             break;
         }
 
@@ -66,7 +67,7 @@ void get_movie_poster(int my_socket,int movie_id) {
     }
     poster.close();
     cout << "\nPoster Downloaded.\n";
-    open_image(path);//Absolute Path
+    open_image(path);   //Absolute Path
 }
 
 /**
@@ -76,14 +77,15 @@ void get_movie_poster(int my_socket,int movie_id) {
  */
 void receive_movie_detail(int my_socket,int movie_id) {
     cout << "\n Movie Details: " << endl;
-    char buff[1024];
+    char buff[16];
     int n;
-    while (n=recv(my_socket, buff, 1024, 0) > 0) {
+    while (n=recv(my_socket, buff, 16, 0) > 0) {
         string s = buff;
+        s = s.substr(0,16);
         if (s.compare("-1") == 0) {
             break;
         }
-        cout << buff;
+        cout << s;
     }
     cout << "Do you want to see poster? (y|N):\n";
     char op;
@@ -101,18 +103,19 @@ void receive_movie_detail(int my_socket,int movie_id) {
  * @param my_socket  id of the socket setup with server
  */
 void receive_movie_list(int my_socket) {
-    char buff[1024];
+    char buff[16];
     int n;
     cout << "ID\tMovie Title\n";
-    while ((n = recv(my_socket, buff, 1024, 0)) > 0) {
+    while ((n = recv(my_socket, buff, 16, 0)) > 0) {
         string s = buff;
-        //cout<<n<<endl;
+        s = s.substr(0,16);
+//        cout<<"....................." << n << "..." <<s <<endl;
         if (s.compare("-1") == 0) {
             break;
         }
-        cout << buff;
+//        cout << buff <<endl;
+        cout<<s;
     }
-
 }
 
 /**

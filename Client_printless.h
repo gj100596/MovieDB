@@ -19,7 +19,8 @@ int a,b;
 char c,d;
 //IP Address of Movie server
 //string ipaddress ="127.0.0.1";
-string ipaddress ="10.130.4.192";
+string ipaddress ="192.168.137.161";
+//string ipaddress ="10.130.4.192";
 
 /**
  * This function sends string data to the socket in the bunch of 1024 bytes
@@ -57,7 +58,7 @@ void get_movie_poster(int my_socket,int movie_id) {
     fstream poster;
     poster.open(path, ios::out | ios::binary);
     int n;
-//    sleep(2);
+    sleep(1);
     char pos[1024];
     while ((n=recv(my_socket, pos, 1024, 0)) > 0) {
         string s = pos;
@@ -79,10 +80,11 @@ void get_movie_poster(int my_socket,int movie_id) {
  */
 void receive_movie_detail(int my_socket,int movie_id) {
 //    cout << "\n Movie Details: " << endl;
-    char buff[1024];
+    char buff[16];
     int n;
-    while (n=recv(my_socket, buff, 1024, 0) > 0) {
+    while (n=recv(my_socket, buff, 16, 0) > 0) {
         string s = buff;
+        s = s.substr(0,16);
         if (s.compare("-1") == 0) {
             break;
         }
@@ -106,18 +108,18 @@ void receive_movie_detail(int my_socket,int movie_id) {
  * @param my_socket  id of the socket setup with server
  */
 void receive_movie_list(int my_socket) {
-    char buff[1024];
+    char buff[16];
     int n;
 //    cout << "ID\tMovie Title\n";
-    while ((n = recv(my_socket, buff, 1024, 0)) > 0) {
+    while ((n = recv(my_socket, buff, 16, 0)) > 0) {
         string s = buff;
-        //cout<<n<<endl;
+        s = s.substr(0,16);
+//        cout<<"....................." << n << "..." <<s <<endl;
         if (s.compare("-1") == 0) {
             break;
         }
 //        cout << buff;
     }
-
 }
 
 /**
@@ -129,6 +131,7 @@ int ask_for_movie_id(int my_socket) {
     //Ask Movie ID for getting Movie Details
 //    cout << "\nEnter movie id for details: ";
     int movie_id=b;
+//    cout << "Sending id " << b;
 //    cin >> movie_id;
     ostringstream oss;
     oss << movie_id;
@@ -231,13 +234,16 @@ void search_by_name(int my_socket) {
  * @return success of a program
  */
 std::mutex mtxx;
-int client_printless(int a,int b,char c, char d,int iid, int i,int PORTNO) {
-    mtxx.lock();
+int client_printless(int a,int b,char c, char d,int iid, int i,int PORTNO){//},int my_socket) {
+//    mtxx.lock();
     ::a = a;
     ::b = b;
     ::c = c;
     ::d = d;
-    mtxx.unlock();
+//    mtxx.unlock();
+
+
+    /* un comment after experiment...*/
     int my_socket;
     struct sockaddr_in server_address;
     my_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -245,6 +251,7 @@ int client_printless(int a,int b,char c, char d,int iid, int i,int PORTNO) {
     server_address.sin_port = htons(PORTNO);
     inet_aton(ipaddress.c_str(), &server_address.sin_addr);
     connect(my_socket, (sockaddr *) &server_address, sizeof(server_address));
+//     */
 //    cout<<"Client id: "<<iid<<" req_no: "<<i<<" socket_id: "<<my_socket<<endl;
     //Ask for request type (All type of Search)
     int request_type = ask_request_type();

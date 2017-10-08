@@ -64,7 +64,6 @@ void send_str_to_socket(int my_socket, string str) {
  */
 void send_movie_list(int client_socket, int type, string movie_name) {
     sql::Connection *con = get_connection(); // get it from pool
-    int flag = 3;
 
     sql::Statement *stmt;
     sql::ResultSet *res;
@@ -93,20 +92,7 @@ void send_movie_list(int client_socket, int type, string movie_name) {
             entry.append("\t");
             entry.append(res->getString(2));
             entry.append("\n");
-//            char buff[1024];
-//            strcpy(buff, entry.c_str());
             send_str_to_socket(client_socket,entry);
-//            send(client_socket, buff, 1024, 0);
-//        if (DEBUG) {
-//            if (flag > 0) {
-//                if (DEBUG)
-//                    cout << entry << endl;
-//                flag--;
-//            } else {
-//                if (DEBUG)
-//                    cout << "..." << endl;
-//            }
-//        }
         }
 
         res->close();
@@ -116,8 +102,6 @@ void send_movie_list(int client_socket, int type, string movie_name) {
         con->close();
         delete con;
     }
-//    char end[1024] = "-1";
-//    send(client_socket, end, 1024, 0);
     send_str_to_socket(client_socket,"-1");
     cout<<"Movie List END; socket: "<<client_socket<<endl;
 
@@ -170,16 +154,9 @@ void send_movie_details(int client_socket, int id) {
                 }
             }
 
-//            char buff[1024];
-//            strcpy(buff, row.c_str());
-//            send(client_socket, buff, 1024, 0);
             send_str_to_socket(client_socket,row);
-//            if(DEBUG)
-//                cout << buff << endl;
         }
 
-//        char end[1024] = "-1";
-//        send(client_socket, end, 1024, 0);
         send_str_to_socket(client_socket,"-1");
         res->close();
         delete res;
@@ -204,13 +181,11 @@ void send_movie_poster(int client_socket, int movie_id) {
     string path = "../images/" + os.str() + ".jpg";
     ifstream poster(path, ios::binary);
 
-    char buffer[16];
+    char buffer[1024];
 
-    while (poster.read(buffer, 16) || poster.gcount() != 0)
-        send(client_socket, buffer, 16, 0);
+    while (poster.read(buffer, 1024) || poster.gcount() != 0)
+        send(client_socket, buffer, 1024, 0);
 
-//    char end[1024] = "-1";
-//    send(client_socket, end, 1024, 0);
     send_str_to_socket(client_socket,"-1");
     poster.close();
 
@@ -354,7 +329,7 @@ void *communicate(void *temp_client_socket) {
     }
     close(client_socket);
     cout << "Closed socket: " << client_socket << endl;
-    pthread_exit(NULL);
+    pthread_exit(0);
 }
 
 void *automate_communicate(void *temp_client_socket) {
