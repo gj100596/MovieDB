@@ -2,6 +2,10 @@
 
 using namespace std;
 
+/*
+ * To be used for phase 3
+ */
+
 class movie {
     int id, vote_count, genre_ids;
     string title, poster_path, overview, date;
