@@ -1,9 +1,9 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <netinet/in.h>
-#include <pthread.h>
+#include <unistd.h>
 #include <fstream>
-#include <zconf.h>
+#include <mutex>
 #include "iostream"
 #include "arpa/inet.h"
 
@@ -11,14 +11,16 @@
 #define LIST_BY_RELEASE_DATE 2
 #define SEARCH_BY_NAME 3
 #define RATE_MOVIE 4
-#define PORTNO 8090
 
 using namespace cv;
 using namespace std;
 
+int a,b;
+char c,d;
 //IP Address of Movie server
 //string ipaddress ="127.0.0.1";
 string ipaddress ="192.168.137.161";
+//string ipaddress ="10.130.4.192";
 
 /**
  * This function sends string data to the socket in the bunch of 1024 bytes
@@ -38,7 +40,7 @@ void send_str_to_socket(int my_socket, string str) {
 void open_image(string abs_path) {
     string command = "shotwell ";
     command.append(abs_path);
-    system(command.c_str());
+//    system(command.c_str());
 }
 
 /**
@@ -48,26 +50,27 @@ void open_image(string abs_path) {
  */
 void get_movie_poster(int my_socket,int movie_id) {
 
-    cout << "\nDownloading Poster...\n";
-    char buff[1024];
+//    cout << "\nDownloading Poster...\n";
     ostringstream oss;
     oss<<"/tmp/"<<movie_id<<".jpg";
     string path=oss.str();
+    oss.clear();
     fstream poster;
     poster.open(path, ios::out | ios::binary);
     int n;
     sleep(1);
-    while ((n=recv(my_socket, buff, 1024, 0)) > 0) {
-        string s = buff;
-        if (s.compare("-1") == 0) {     //buff[0] == '-' && buff[1] == '1'){//
+    char pos[1024];
+    while ((n=recv(my_socket, pos, 1024, 0)) > 0) {
+        string s = pos;
+        if (s.compare("-1") == 0) {
             break;
         }
 
-        poster.write(buff, sizeof(buff));
+        poster.write(pos, sizeof(pos));
     }
     poster.close();
-    cout << "\nPoster Downloaded.\n";
-    open_image(path);   //Absolute Path
+//    cout << "\nPoster Downloaded.\n";
+    open_image(path);//Absolute Path
 }
 
 /**
@@ -76,7 +79,7 @@ void get_movie_poster(int my_socket,int movie_id) {
  * @param movie_id id of the movie whose details need to be shown
  */
 void receive_movie_detail(int my_socket,int movie_id) {
-    cout << "\n Movie Details: " << endl;
+//    cout << "\n Movie Details: " << endl;
     char buff[16];
     int n;
     while (n=recv(my_socket, buff, 16, 0) > 0) {
@@ -85,11 +88,13 @@ void receive_movie_detail(int my_socket,int movie_id) {
         if (s.compare("-1") == 0) {
             break;
         }
-        cout << s;
+//        cout << buff;
     }
-    cout << "Do you want to see poster? (y|N):\n";
+    //    cout << "Do you want to see poster? (y|N):\n";
     char op;
-    cin >> op;
+    op = c;
+//    cin >> op;
+//    delete(buff);
     if (op == 'y') {
         send_str_to_socket(my_socket, "1");
 
@@ -105,7 +110,7 @@ void receive_movie_detail(int my_socket,int movie_id) {
 void receive_movie_list(int my_socket) {
     char buff[16];
     int n;
-    cout << "ID\tMovie Title\n";
+//    cout << "ID\tMovie Title\n";
     while ((n = recv(my_socket, buff, 16, 0)) > 0) {
         string s = buff;
         s = s.substr(0,16);
@@ -113,8 +118,7 @@ void receive_movie_list(int my_socket) {
         if (s.compare("-1") == 0) {
             break;
         }
-//        cout << buff <<endl;
-        cout<<s;
+//        cout << buff;
     }
 }
 
@@ -125,9 +129,10 @@ void receive_movie_list(int my_socket) {
  */
 int ask_for_movie_id(int my_socket) {
     //Ask Movie ID for getting Movie Details
-    cout << "\nEnter movie id for details: ";
-    int movie_id;
-    cin >> movie_id;
+//    cout << "\nEnter movie id for details: ";
+    int movie_id=b;
+//    cout << "Sending id " << b;
+//    cin >> movie_id;
     ostringstream oss;
     oss << movie_id;
     send_str_to_socket(my_socket, oss.str());
@@ -140,7 +145,7 @@ int ask_for_movie_id(int my_socket) {
  */
 int get_and_check_rating(){
     float rating;
-    cout<<"Rate on the scale of 1 to 10: ";
+//    cout<<"Rate on the scale of 1 to 10: ";
     cin>>rating;
     if(rating<1){
         rating=1;
@@ -158,8 +163,9 @@ int get_and_check_rating(){
  */
 void ask_for_movie_rating(int my_socket){
     char option;
-    cout<<"Would you like to rate this movie(y/N): ";
-    cin>>option;
+//    cout<<"Would you like to rate this movie(y/N): ";
+    option = d;
+//    cin>>option;
     if(option=='y' or option=='Y'){
         ostringstream oss;
         oss<<RATE_MOVIE;
@@ -169,7 +175,7 @@ void ask_for_movie_rating(int my_socket){
         ostringstream oss1;
         oss1<<rating;
         send_str_to_socket(my_socket,oss1.str());
-        cout<<"Thank you for rating the movie!"<<endl;
+//        cout<<"Thank you for rating the movie!"<<endl;
     }else{
         send_str_to_socket(my_socket,"-1");
     }
@@ -200,12 +206,13 @@ void handle_movie_listing(int my_socket) {
  */
 int ask_request_type() {
     int request_no;
-    cout << "Select Action: " << endl;
-    cout << LIST_BY_POPULARITY << " Get movie list sorted by popularity" << endl;
-    cout << LIST_BY_RELEASE_DATE << " Get movie list sorted by release date" << endl;
-    cout << SEARCH_BY_NAME << " Search movies by name" << endl;
-    cout << "Enter your choice: ";
-    cin >> request_no;
+//    cout << "Select Action: " << endl;
+//    cout << LIST_BY_POPULARITY << " Get movie list sorted by popularity" << endl;
+//    cout << LIST_BY_RELEASE_DATE << " Get movie list sorted by release date" << endl;
+//    cout << SEARCH_BY_NAME << " Search movies by name" << endl;
+//    cout << "Enter your choice: ";
+    request_no = a;
+//    cin >> request_no;
     return request_no;
 }
 
@@ -216,7 +223,7 @@ int ask_request_type() {
 void search_by_name(int my_socket) {
 //    sleep(1);
     string movie_name;
-    cout<<"Enter movie name: ";
+//    cout<<"Enter movie name: ";
     cin>>movie_name;
     send_str_to_socket(my_socket,movie_name);
     handle_movie_listing(my_socket);
@@ -226,7 +233,17 @@ void search_by_name(int my_socket) {
  * Main functions. Ask user for action and perform accordingly
  * @return success of a program
  */
-int main() {
+std::mutex mtxx;
+int client_printless(int a,int b,char c, char d,int iid, int i,int PORTNO){//},int my_socket) {
+//    mtxx.lock();
+    ::a = a;
+    ::b = b;
+    ::c = c;
+    ::d = d;
+//    mtxx.unlock();
+
+
+    /* un comment after experiment...*/
     int my_socket;
     struct sockaddr_in server_address;
     my_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -234,6 +251,8 @@ int main() {
     server_address.sin_port = htons(PORTNO);
     inet_aton(ipaddress.c_str(), &server_address.sin_addr);
     connect(my_socket, (sockaddr *) &server_address, sizeof(server_address));
+//     */
+//    cout<<"Client id: "<<iid<<" req_no: "<<i<<" socket_id: "<<my_socket<<endl;
     //Ask for request type (All type of Search)
     int request_type = ask_request_type();
     ostringstream oss;
@@ -250,5 +269,6 @@ int main() {
         default:
             break;
     }
+    close(my_socket);
     return 0;
 }

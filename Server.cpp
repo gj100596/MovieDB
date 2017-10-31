@@ -25,16 +25,33 @@
 #define DB_USER "root"
 #define DB_PASS "0882"
 
+bool DEBUG = true;
+
 using namespace sql;
 using namespace std;
 
 sql::Driver *driver;
 
 std::mutex mtx;
-bool cout_comments = true;
+int con_count = 0;
+sql::Connection *get_connection() {
+    sql::Connection *con ;
+    mtx.lock();
+    cout << "Connection "<<con_count++;
+    try {
+        con= driver->connect(DB_URL, DB_USER, DB_PASS);
+    }catch(...){
+        con= driver->connect(DB_URL, DB_USER, DB_PASS);
+    }
+    mtx.unlock();
+    return con;
+}
 
-sql::Connection* get_connection(){
-    return driver->connect(DB_URL, DB_USER, DB_PASS);
+void send_str_to_socket(int my_socket, string str) {
+    int buff_size = 16;
+    for (int i=0;i<str.length();i+=buff_size){
+        send(my_socket, str.substr(i,buff_size).c_str(), buff_size, 0);
+    }
 }
 
 /**
@@ -47,54 +64,47 @@ sql::Connection* get_connection(){
  */
 void send_movie_list(int client_socket, int type, string movie_name) {
     sql::Connection *con = get_connection(); // get it from pool
-    int flag = 3;
 
     sql::Statement *stmt;
     sql::ResultSet *res;
+    cout<<"Movie List START; socket: "<<client_socket<<endl;
+    if (con->isValid()) {
 
-    stmt = con->createStatement();
-    stmt->execute("USE moviedb");
+        stmt = con->createStatement();
+        stmt->execute("USE moviedb");
 
-    if (type == BY_POPULARITY) {
-        res = stmt->executeQuery("Select id,title from movie");
-    } else if (type == BY_DATE) {
-        res = stmt->executeQuery("Select id,title from movie order by release_date desc");
-    } else if (type == BY_NAME) {
-        string query = "select id,title from movie where title like \"%" + movie_name + "%\"";
-        res = stmt->executeQuery(query);
-    } else {
-        cout << "Exception" << endl;
-    }
-
-
-    while (res->next()) {
-        ostringstream oss;
-        string entry;
-        oss << res->getInt(1);
-        entry.append(oss.str());
-        entry.append("\t");
-        entry.append(res->getString(2));
-        entry.append("\n");
-        char buff[1024];
-        strcpy(buff, entry.c_str());
-        send(client_socket, buff, 1024, 0);
-        if (flag > 0) {
-            if (cout_comments)
-                cout << entry << endl;
-            flag--;
+        if (type == BY_POPULARITY) {
+            res = stmt->executeQuery("Select id,title from movie");
+        } else if (type == BY_DATE) {
+            res = stmt->executeQuery("Select id,title from movie order by release_date desc");
+        } else if (type == BY_NAME) {
+            string query = "select id,title from movie where title like \"%" + movie_name + "%\"";
+            res = stmt->executeQuery(query);
         } else {
-            if (cout_comments)
-                cout << "..." << endl;
+            cout << "Exception" << endl;
         }
+
+        while (res->next()) {
+            ostringstream oss;
+            string entry;
+            oss << res->getInt(1);
+            entry.append(oss.str());
+            entry.append("\t");
+            entry.append(res->getString(2));
+            entry.append("\n");
+            send_str_to_socket(client_socket,entry);
+        }
+
+        res->close();
+        delete res;
+        stmt->close();
+        delete stmt;
+        con->close();
+        delete con;
     }
-    res->close();
-    delete res;
-    stmt->close();
-    delete stmt;
-    con->close();
-    delete con;
-    char end[1024] = "-1";
-    send(client_socket, end, 1024, 0);
+    send_str_to_socket(client_socket,"-1");
+    cout<<"Movie List END; socket: "<<client_socket<<endl;
+
 }
 
 /**
@@ -107,6 +117,7 @@ void send_movie_details(int client_socket, int id) {
     sql::Statement *stmt;
     sql::ResultSet *res;
     sql::Connection *con = get_connection(); // get it from pool
+    cout<<"Movie details START; socket: "<<client_socket<<endl;
     if (con->isValid()) {
         ostringstream oss;
         stmt = con->createStatement();
@@ -143,23 +154,18 @@ void send_movie_details(int client_socket, int id) {
                 }
             }
 
-            char buff[1024];
-            strcpy(buff, row.c_str());
-            send(client_socket, buff, 1024, 0);
-            cout << buff << endl;
+            send_str_to_socket(client_socket,row);
         }
 
-        char end[1024] = "-1";
-        send(client_socket, end, 1024, 0);
-
+        send_str_to_socket(client_socket,"-1");
         res->close();
         delete res;
         stmt->close();
         delete stmt;
         con->close();
         delete con;
-
     }
+    cout<<"Movie details END; socket: "<<client_socket<<endl;
 }
 
 /**
@@ -180,9 +186,7 @@ void send_movie_poster(int client_socket, int movie_id) {
     while (poster.read(buffer, 1024) || poster.gcount() != 0)
         send(client_socket, buffer, 1024, 0);
 
-    char end[1024] = "-1";
-    send(client_socket, end, 1024, 0);
-
+    send_str_to_socket(client_socket,"-1");
     poster.close();
 
 }
@@ -223,7 +227,8 @@ void update_movie_rating(int rating, int id) {
                                           "= " + count_oss.str() + ",vote_average=" + rating_oss.str() + " "
                                           "where id = " + oss.str();
             int update = stmt->executeUpdate(update_query);
-            cout<<"Update: "<<update<<endl;
+            if (DEBUG)
+                cout << "Update: " << update << endl;
             stmt->close();
         }
         res->close();
@@ -245,62 +250,173 @@ void *communicate(void *temp_client_socket) {
 //    Connection* con = get_connection();
     int client_socket = *((int *) temp_client_socket);
     free(temp_client_socket);
-    if (cout_comments)
-        cout << "Client In Thread!! socketid: " << client_socket << endl;
+    try {
+        if (DEBUG)
+            cout << "Request In Thread!! socket: " << client_socket << endl;
 
-    // Wait for what type of request client wants to do.
-    char type_c[1024];
-    int result = recv(client_socket, type_c, 1024, 0);
-    cout<<"Error: "<<errno<<endl;
-    int request_type = atoi(type_c);
-    cout <<"No of received bytes: "<<result<<endl;
-    if (request_type == 0) {
-        result = recv(client_socket, type_c, 1024, 0);
-        request_type = atoi(type_c);
-        cout <<"No of received bytes: "<<result<<endl;
+        // Wait for what type of request client wants to do.
+        char type_c[1024];
+        int result = recv(client_socket, type_c, 1024, 0);
+        if (DEBUG)
+            cout << "First recv; socket: " << client_socket << endl;
+//    cout<<"Error: "<<errno<<endl;
+        int request_type = atoi(type_c);
+//    cout <<"No of received bytes: "<<result<<endl;
+//        if (request_type == 0) {
+//            result = recv(client_socket, type_c, 1024, 0);
+//            request_type = atoi(type_c);
+////        cout <<"No of received bytes: "<<result<<endl;
+//        }
+        // If we want list go to send_movie_list() it will give right list
+        if (request_type == BY_POPULARITY || request_type == BY_DATE) {
+            send_movie_list(client_socket, request_type, "");
+        }
+            // If we are searching by name then call send_movie_list() with name
+        else if (request_type == BY_NAME) {
+            // First Read the movie name
+            char buff[1024];
+            recv(client_socket, buff, 1024, 0);
+            string movie_name = buff;
+            // Send list of movie matching
+            send_movie_list(client_socket, request_type, movie_name);
+        } else {
+            if (DEBUG)
+                cout << "Wrong Choice";
+        }
+
+        // Wait for the Movie Id client wants to know about.
+        char no[1024];
+        recv(client_socket, no, 1024, 0);
+        int movie_id = atoi(no);
+        if (DEBUG)
+            cout << "Second recv; socket: " << client_socket << " Movie id: " << movie_id << endl;
+
+        // Send Details of that movie
+        send_movie_details(client_socket, movie_id);
+
+        char poster[1024];
+        recv(client_socket, poster, 1024, 0);
+        if (DEBUG)
+            cout << "Third recv; socket: " << client_socket << endl;
+
+        int show_poster = atoi(poster);
+        if (show_poster == 1) {
+            // Send Poster of it.
+            send_movie_poster(client_socket, movie_id);
+        }
+
+        // Wait if we are getting rating or not.
+        char change[1024];
+        recv(client_socket, change, 1024, 0);
+        if (DEBUG)
+            cout << "Fourth recv; socket: " << client_socket << endl;
+
+        int change_rating = atoi(change);
+
+        if (change_rating == RATE_MOVIE) {
+            // If client wants to rate, then wait for rating value.
+            char rating[1024];
+            recv(client_socket, rating, 1024, 0);
+            int new_rating = atoi(rating);
+
+            // Once we have rating update the movie in db
+            update_movie_rating(new_rating, movie_id);
+        }
+    } catch (std::exception &e) {
+        cout << "Exception in socket: " << client_socket << endl;
+        cout << "Exception: " << e.what() << endl;
+        exit(0);
     }
-    // If we want list go to send_movie_list() it will give right list
-    if (request_type == BY_POPULARITY || request_type == BY_DATE) {
-        send_movie_list(client_socket, request_type, "");
+    close(client_socket);
+    cout << "Closed socket: " << client_socket << endl;
+    pthread_exit(0);
+}
+
+void *automate_communicate(void *temp_client_socket) {
+//    Connection* con = get_connection();
+    int client_socket = *((int *) temp_client_socket);
+    free(temp_client_socket);
+    try {
+//        if (DEBUG)
+        cout << "Request In Thread!! socket: " << client_socket << endl;
+
+        // Wait for what type of request client wants to do.
+        char type_c[1024];
+        int result;// = recv(client_socket, type_c, 1024, 0);
+        if (DEBUG)
+            cout << "First recv; socket: " << client_socket << endl;
+//    cout<<"Error: "<<errno<<endl;
+        int request_type = 1;//atoi(type_c);
+//    cout <<"No of received bytes: "<<result<<endl;
+        if (request_type == 0) {
+            result = recv(client_socket, type_c, 1024, 0);
+            request_type = atoi(type_c);
+//        cout <<"No of received bytes: "<<result<<endl;
+        }
+        // If we want list go to send_movie_list() it will give right list
+        if (request_type == BY_POPULARITY || request_type == BY_DATE) {
+            send_movie_list(client_socket, request_type, "");
+        }
+            // If we are searching by name then call send_movie_list() with name
+        else if (request_type == BY_NAME) {
+            // First Read the movie name
+            char buff[1024];
+            recv(client_socket, buff, 1024, 0);
+            string movie_name = buff;
+            // Send list of movie matching
+            send_movie_list(client_socket, request_type, movie_name);
+        } else {
+            if (DEBUG)
+                cout << "Wrong Choice";
+        }
+
+        // Wait for the Movie Id client wants to know about.
+        char no[1024];
+//        recv(client_socket, no, 1024, 0);
+//        int movie_id = atoi(no);
+        int movie_id = rand() % 20 + 1;
+        if (DEBUG)
+            cout << "Second recv; socket: " << client_socket << " Movie id: " << movie_id << endl;
+
+        // Send Details of that movie
+        send_movie_details(client_socket, movie_id);
+
+        char poster[1024];
+//        recv(client_socket, poster, 1024, 0);
+        if (DEBUG)
+            cout << "Third recv; socket: " << client_socket << endl;
+
+        int show_poster = 1;//atoi(poster);
+        if (show_poster == 1) {
+            // Send Poster of it.
+            send_movie_poster(client_socket, movie_id);
+        }
+
+        // Wait if we are getting rating or not.
+        char change[1024];
+//        recv(client_socket, change, 1024, 0);
+        if (DEBUG)
+            cout << "Fourth recv; socket: " << client_socket << endl;
+
+        int change_rating = -1;//atoi(change);
+
+        if (change_rating == RATE_MOVIE) {
+            // If client wants to rate, then wait for rating value.
+            char rating[1024];
+            recv(client_socket, rating, 1024, 0);
+            int new_rating = atoi(rating);
+
+            // Once we have rating update the movie in db
+            update_movie_rating(new_rating, movie_id);
+        }
+    } catch (std::exception &e) {
+        cout << "Exception in socket: " << client_socket << endl;
+        cout << "Exception: " << e.what() << endl;
+        exit(0);
     }
-        // If we are searching by name then call send_movie_list() with name
-    else if (request_type == BY_NAME) {
-        // First Read the movie name
-        char buff[1024];
-        recv(client_socket, buff, 1024, 0);
-        string movie_name = buff;
-        // Send list of movie matching
-        send_movie_list(client_socket, request_type, movie_name);
-    } else {
-        if (cout_comments)
-            cout << "Wrong Choice";
-    }
-
-    // Wait for the Movie Id client wants to know about.
-    char no[1024];
-    recv(client_socket, no, 1024, 0);
-    int movie_id = atoi(no);
-
-    // Send Details of that movie
-    send_movie_details(client_socket, movie_id);
-
-    // Send Poster of it.
-    send_movie_poster(client_socket, movie_id);
-
-    // Wait if we are getting rating or not.
-    char change[1024];
-    recv(client_socket, change, 1024, 0);
-    int change_rating = atoi(change);
-
-    if (change_rating == RATE_MOVIE) {
-        // If client wants to rate, then wait for rating value.
-        char rating[1024];
-        recv(client_socket, rating, 1024, 0);
-        int new_rating = atoi(rating);
-
-        // Once we have rating update the movie in db
-        update_movie_rating(new_rating, movie_id);
-    }
+    close(client_socket);
+    cout << "Closed socket: " << client_socket << endl;
+    pthread_exit(NULL);
 }
 
 int main() {
@@ -318,31 +434,35 @@ int main() {
     do {
         bind_result = bind(server_socket, (struct sockaddr *) &my_address, sizeof(my_address));
         if (bind_result == -1)
+//            if (DEBUG)
             cout << "Could not bind to port: " << PORTNO << endl;
+//        if(DEBUG)
         cout << "Bind result(0->success,-1->failure): " << bind_result << endl;
         sleep(1);
     } while (bind_result == -1);
 
     // Open one common connection to db.
     driver = get_driver_instance();
-
+    listen(server_socket, 50);
+    int client_count = 0;
     while (true) {
-        listen(server_socket, 50);
 
         // Once a client gets connected spawn a new thread.
         struct sockaddr_in client_address;
-        int* new_client_socket=(int *) malloc(10* sizeof(int));
+        int *new_client_socket = (int *) malloc(1 * sizeof(int));
         int clinet_size = sizeof(client_address);
         if ((*new_client_socket = accept(server_socket, (struct sockaddr *) &client_address,
-                                    (socklen_t *) (&clinet_size))) < 0) {
-            if (cout_comments)
+                                         (socklen_t *) (&clinet_size))) < 0) {
+            if (DEBUG)
                 cout << "Error while connecting socket" << endl;
         }
 //        int client_socket = new_client_socket;
-        if (cout_comments)
-            cout << "Client arrived!! socketid: " << *new_client_socket<< endl;
+//        if (DEBUG)
+        cout << "Client "<<client_count++ <<" arrived!! socketid: " << *new_client_socket << endl;
         pthread_t thread;
         pthread_create(&thread, NULL, communicate, (void *) new_client_socket);
+        pthread_detach(thread);
+
 //        communicate(&client_socket);
     }
 }
