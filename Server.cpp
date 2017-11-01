@@ -3,13 +3,13 @@
 
 #include <netinet/in.h>
 #include "iostream"
-#include "sys/socket.h"
 #include <mysql_driver.h>
 #include <cstring>
 #include <sstream>
 #include <fstream>
 #include "mysql_connection.h"
 #include "cppconn/statement.h"
+#include "Cache.cpp"
 #include <mutex>
 
 #define PORTNO 8090
@@ -30,18 +30,21 @@ bool DEBUG = true;
 using namespace sql;
 using namespace std;
 
+Cache cache;
+
 sql::Driver *driver;
 
 std::mutex mtx;
 int con_count = 0;
+
 sql::Connection *get_connection() {
-    sql::Connection *con ;
+    sql::Connection *con;
     mtx.lock();
-    cout << "Connection "<<con_count++;
+    cout << "Connection " << con_count++;
     try {
-        con= driver->connect(DB_URL, DB_USER, DB_PASS);
-    }catch(...){
-        con= driver->connect(DB_URL, DB_USER, DB_PASS);
+        con = driver->connect(DB_URL, DB_USER, DB_PASS);
+    } catch (...) {
+        con = driver->connect(DB_URL, DB_USER, DB_PASS);
     }
     mtx.unlock();
     return con;
@@ -49,8 +52,8 @@ sql::Connection *get_connection() {
 
 void send_str_to_socket(int my_socket, string str) {
     int buff_size = 16;
-    for (int i=0;i<str.length();i+=buff_size){
-        send(my_socket, str.substr(i,buff_size).c_str(), buff_size, 0);
+    for (int i = 0; i < str.length(); i += buff_size) {
+        send(my_socket, str.substr(i, buff_size).c_str(), buff_size, 0);
     }
 }
 
@@ -67,7 +70,7 @@ void send_movie_list(int client_socket, int type, string movie_name) {
 
     sql::Statement *stmt;
     sql::ResultSet *res;
-    cout<<"Movie List START; socket: "<<client_socket<<endl;
+    cout << "Movie List START; socket: " << client_socket << endl;
     if (con->isValid()) {
 
         stmt = con->createStatement();
@@ -92,7 +95,7 @@ void send_movie_list(int client_socket, int type, string movie_name) {
             entry.append("\t");
             entry.append(res->getString(2));
             entry.append("\n");
-            send_str_to_socket(client_socket,entry);
+            send_str_to_socket(client_socket, entry);
         }
 
         res->close();
@@ -102,22 +105,18 @@ void send_movie_list(int client_socket, int type, string movie_name) {
         con->close();
         delete con;
     }
-    send_str_to_socket(client_socket,"-1");
-    cout<<"Movie List END; socket: "<<client_socket<<endl;
+    send_str_to_socket(client_socket, "-1");
+    cout << "Movie List END; socket: " << client_socket << endl;
 
 }
 
-/**
- * This method sends data of movie to user over socket.
- * @param client_socket Socket over which data is to be passed.
- * @param id Id of movie in DB whose details are to be given.
- * @param con Database connection object used to get data from db.
- */
-void send_movie_details(int client_socket, int id) {
+
+Movies create_movie_object(int id) {
+    Movies object = Movies();
+
     sql::Statement *stmt;
     sql::ResultSet *res;
     sql::Connection *con = get_connection(); // get it from pool
-    cout<<"Movie details START; socket: "<<client_socket<<endl;
     if (con->isValid()) {
         ostringstream oss;
         stmt = con->createStatement();
@@ -131,33 +130,14 @@ void send_movie_details(int client_socket, int id) {
                         "Genre Id"};
         while (res->next()) {
             string row;
-            for (int i = 0; i < 7; i++) {
-                if (i == 0 || i == 6) {
-                    ostringstream s;
-                    s << res->getInt(i + 1);
-                    row.append(col[i]);
-                    row.append("\t");
-                    row.append(s.str());
-                    row.append("\n");
-                } else if (i == 4 || i == 5) {
-                    ostringstream s;
-                    s << res->getDouble(i + 1);
-                    row.append(col[i]);
-                    row.append("\t");
-                    row.append(s.str());
-                    row.append("\n");
-                } else {
-                    row.append(col[i]);
-                    row.append("\t");
-                    row.append(res->getString(i + 1).c_str());
-                    row.append("\n");
-                }
-            }
-
-            send_str_to_socket(client_socket,row);
+            object.setId(res->getInt(1));
+            object.setTitle(res->getString(2));
+            object.setDate(res->getString(3));
+            object.setOverview(res->getString(4));
+            object.setVote_average(res->getDouble(5));
+            object.setPopularity(res->getDouble(6));
+            object.setGenre_ids(res->getInt(7));
         }
-
-        send_str_to_socket(client_socket,"-1");
         res->close();
         delete res;
         stmt->close();
@@ -165,8 +145,77 @@ void send_movie_details(int client_socket, int id) {
         con->close();
         delete con;
     }
+    return object;
+}
+
+void send_movie_details_from_object(int client_socket, Movies object) {
+    string col[] = {"Id", "Title", "Release Date", "Overview", "Vote_average", "Popularity",
+                    "Genre Id"};
+    string row;
+    for (int i = 0; i < 7; i++) {
+        if (i == 0 || i == 6) {
+            ostringstream s;
+            if (i == 0)
+                s << object.getId();
+            else
+                s << object.getGenre_ids();
+            row.append(col[i]);
+            row.append("\t");
+            row.append(s.str());
+            row.append("\n");
+        } else if (i == 4 || i == 5) {
+            ostringstream s;
+            if (i == 4)
+                s << object.getVote_average();
+            else
+                s << object.getPopularity();
+            row.append(col[i]);
+            row.append("\t");
+            row.append(s.str());
+            row.append("\n");
+        } else {
+            row.append(col[i]);
+            row.append("\t");
+            switch (i) {
+                case 1:
+                    row.append(object.getTitle().c_str());
+                    break;
+                case 2:
+                    row.append(object.getDate().c_str());
+                    break;
+                case 3:
+                    row.append(object.getOverview().c_str());
+                    break;
+            }
+            row.append("\n");
+        }
+    }
+    send_str_to_socket(client_socket, row);
+    send_str_to_socket(client_socket, "-1");
     cout<<"Movie details END; socket: "<<client_socket<<endl;
 }
+
+/**
+ * This method sends data of movie to user over socket.
+ *
+ * Change in Phase 3: Check if details are there as object or not.
+ * If yes pass detail from there otherwise fetch from DB
+ *
+ * @param client_socket Socket over which data is to be passed.
+ * @param id Id of movie in DB whose details are to be given.
+ * @param con Database connection object used to get data from db.
+ */
+void send_movie_details(int client_socket, int id) {
+    Movies object_to_send;
+    object_to_send = cache.query(id);
+    // Check if cache has the movie object
+    if(object_to_send.getId() == -1){
+        object_to_send = create_movie_object(id);
+        cache.insert(object_to_send);
+    }
+    send_movie_details_from_object(client_socket,object_to_send);
+}
+
 
 /**
  * This method sends movie's poster over the socket.
@@ -186,7 +235,7 @@ void send_movie_poster(int client_socket, int movie_id) {
     while (poster.read(buffer, 1024) || poster.gcount() != 0)
         send(client_socket, buffer, 1024, 0);
 
-    send_str_to_socket(client_socket,"-1");
+    send_str_to_socket(client_socket, "-1");
     poster.close();
 
 }
@@ -458,7 +507,7 @@ int main() {
         }
 //        int client_socket = new_client_socket;
 //        if (DEBUG)
-        cout << "Client "<<client_count++ <<" arrived!! socketid: " << *new_client_socket << endl;
+        cout << "Client " << client_count++ << " arrived!! socketid: " << *new_client_socket << endl;
         pthread_t thread;
         pthread_create(&thread, NULL, communicate, (void *) new_client_socket);
         pthread_detach(thread);
