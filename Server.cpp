@@ -38,13 +38,18 @@ std::mutex mtx;
 int con_count = 0;
 
 sql::Connection *get_connection() {
-    sql::Connection *con;
+    sql::Connection *con ;
     mtx.lock();
-    cout << "Connection " << con_count++;
+if (DEBUG)
+    cout << "Connection "<<con_count++;
     try {
-        con = driver->connect(DB_URL, DB_USER, DB_PASS);
-    } catch (...) {
-        con = driver->connect(DB_URL, DB_USER, DB_PASS);
+        con= driver->connect(DB_URL, DB_USER, DB_PASS);
+    }catch(std::exception &e){
+	cout << "Exception in mysql connection : " << endl;
+        cout << "Exception: " << e.what() << endl;
+        exit(0);
+
+        con= driver->connect(DB_URL, DB_USER, DB_PASS);
     }
     mtx.unlock();
     return con;
@@ -70,7 +75,8 @@ void send_movie_list(int client_socket, int type, string movie_name) {
 
     sql::Statement *stmt;
     sql::ResultSet *res;
-    cout << "Movie List START; socket: " << client_socket << endl;
+if (DEBUG)
+    cout<<"Movie List START; socket: "<<client_socket<<endl;
     if (con->isValid()) {
 
         stmt = con->createStatement();
@@ -105,8 +111,9 @@ void send_movie_list(int client_socket, int type, string movie_name) {
         con->close();
         delete con;
     }
-    send_str_to_socket(client_socket, "-1");
-    cout << "Movie List END; socket: " << client_socket << endl;
+    send_str_to_socket(client_socket,"-1");
+if (DEBUG)
+    cout<<"Movie List END; socket: "<<client_socket<<endl;
 
 }
 
@@ -386,8 +393,8 @@ void *automate_communicate(void *temp_client_socket) {
     int client_socket = *((int *) temp_client_socket);
     free(temp_client_socket);
     try {
-//        if (DEBUG)
-        cout << "Request In Thread!! socket: " << client_socket << endl;
+        if (DEBUG)
+	        cout << "Request In Thread!! socket: " << client_socket << endl;
 
         // Wait for what type of request client wants to do.
         char type_c[1024];
@@ -464,6 +471,7 @@ void *automate_communicate(void *temp_client_socket) {
         exit(0);
     }
     close(client_socket);
+if (DEBUG)
     cout << "Closed socket: " << client_socket << endl;
     pthread_exit(NULL);
 }
@@ -492,7 +500,7 @@ int main() {
 
     // Open one common connection to db.
     driver = get_driver_instance();
-    listen(server_socket, 50);
+    listen(server_socket, 10000);
     int client_count = 0;
     while (true) {
 
@@ -507,7 +515,8 @@ int main() {
         }
 //        int client_socket = new_client_socket;
 //        if (DEBUG)
-        cout << "Client " << client_count++ << " arrived!! socketid: " << *new_client_socket << endl;
+if (DEBUG)
+        cout << "Client "<<client_count++ <<" arrived!! socketid: " << *new_client_socket << endl;
         pthread_t thread;
         pthread_create(&thread, NULL, communicate, (void *) new_client_socket);
         pthread_detach(thread);
