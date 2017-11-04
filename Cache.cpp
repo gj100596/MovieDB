@@ -3,8 +3,15 @@
 //
 #include "list"
 #include "Movies.cpp"
+#include <iostream>
+#include <mutex>
+
+using namespace std;
+
+std::mutex mtx_cache;
+
 //
-class Cache{
+class Cache {
     int cache_size = 10;
 //    int index = 0;
     list<Movies> objects;
@@ -12,22 +19,30 @@ class Cache{
 //    Classes objects[cache_size];
 
 public:
-    Cache(){
+    Cache() {
 
     }
 
-    Movies query(int id){
-        for (list<Movies>::iterator obj = objects.begin(); obj != objects.end(); obj++){
-            if(obj->getId() == id)
-                return *obj;
+    Movies query(int id) {
+        try {
+            for (list<Movies>::iterator obj = objects.begin(); obj != objects.end(); obj++) {
+                if (obj->getId() == id)
+                    return *obj;
+            }
+        } catch(std::exception& e){
+            cout<<"Exception: "<<e.what()<<endl;
         }
-        return Movies(-1) ;
+
+        return Movies(-1);
     }
 
-    void insert(Movies new_obj){
-        if (objects.size() == cache_size){
-            objects.pop_back();
+    void insert(Movies new_obj) {
+        mtx_cache.lock();
+        if (this->objects.size() == cache_size) {
+            this->objects.pop_back();
         }
-        objects.push_front(new_obj);
+        this->objects.push_front(new_obj);
+        mtx_cache.unlock();
+
     }
 };

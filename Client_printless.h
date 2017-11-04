@@ -18,9 +18,9 @@ using namespace std;
 int a,b;
 char c,d;
 //IP Address of Movie server
-string ipaddress ="127.0.0.1";
+//string ipaddress ="127.0.0.1";
 //string ipaddress ="192.168.137.161";
-//string ipaddress ="10.16.23.70";
+string ipaddress ="10.130.4.192";
 
 /**
  * This function sends string data to the socket in the bunch of 1024 bytes

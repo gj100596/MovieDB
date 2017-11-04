@@ -28,6 +28,12 @@ public:
     }
 
     int getId() const {
+        try {
+            int temp_id = id;
+        }catch(...){
+            cout<<"Exception in Movies!"<<endl;
+            return -1;
+        }
         return id;
     }
 
