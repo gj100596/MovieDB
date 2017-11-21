@@ -19,8 +19,8 @@ int a,b;
 char c,d;
 //IP Address of Movie server
 //string ipaddress ="127.0.0.1";
-string ipaddress ="192.168.137.161";
-//string ipaddress ="10.130.4.192";
+//string ipaddress ="192.168.137.161";
+string ipaddress ="10.130.4.192";
 
 /**
  * This function sends string data to the socket in the bunch of 1024 bytes
@@ -70,7 +70,7 @@ void get_movie_poster(int my_socket,int movie_id) {
     }
     poster.close();
 //    cout << "\nPoster Downloaded.\n";
-    open_image(path);//Absolute Path
+//    open_image(path);//Absolute Path
 }
 
 /**
@@ -144,9 +144,9 @@ int ask_for_movie_id(int my_socket) {
  * @return integer rating between 1 to 10
  */
 int get_and_check_rating(){
-    float rating;
+    float rating=10;
 //    cout<<"Rate on the scale of 1 to 10: ";
-    cin>>rating;
+//    cin>>rating;
     if(rating<1){
         rating=1;
     }else if(rating>10){
